@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-WNRNCBVSKY"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-    gtag('config', 'G-WNRNCBVSKY');
+        gtag('config', 'G-WNRNCBVSKY');
     </script>
 
     <script>
@@ -18,7 +19,7 @@
                 'searchQuery': query
             });
         }
-        
+
         // JavaScript code to track a product click
         function trackProductClick(productId) {
             gtag('event', 'productClick', {
@@ -39,18 +40,76 @@
             /* background-repeat: no-repeat; */
             background-attachment: fixed;
         }
+
         .navbar {
             /* background-color: #E0CECB; */
         }
+
         .navbar-brand {
             font-weight: bold;
             font-size: 24px;
         }
+
+        .custom-dropdown-toggle::after {
+            display: none !important;
+            /* Hides the default arrow */
+        }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand" href="/" style="font-family: 'Times New Roman', Times, serif; color:black; font-size:xx-large;">Husn</a>
+        <a class="navbar-brand" href="/"
+            style="font-family: 'Times New Roman', Times, serif; color:black; font-size:xx-large;">Husn</a>
+
+        <!-- Right-aligned button area -->
+        <div class="ml-auto">
+            {% if current_user.is_authenticated %}
+            <!-- User is logged in, display profile picture with a dropdown -->
+            <div class="dropdown">
+                <a class="nav-link custom-dropdown-toggle" href="#" id="profileMenu" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="padding: 0;">
+                    <img src="{{ current_user.picture_url }}" alt="Profile" class="rounded-circle" width="40"
+                        height="40" style="border-radius: 50%;">
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profileMenu">
+                    <a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- User is not logged in, display Google Sign-In button -->
+            <div>
+                <a id="sign-in-button" class="bf b io ip bk th gd ff ti fl tj ev fa tk tl tm tn to fb fc fd bm fe"
+                    href="/login" rel="noopener follow" style="text-decoration: none;">
+                    <div class="ab q cp" style="font-size: 16px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24"
+                            class="l">
+                            <g id="google">
+                                <g id="google-vector" fill-rule="evenodd" clip-rule="evenodd">
+                                    <path id="Shape" fill="#4285F4"
+                                        d="M20.64 12.205q-.002-.957-.164-1.84H12v3.48h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615">
+                                    </path>
+                                    <path id="Shape_2" fill="#34A853"
+                                        d="M12 21c2.43 0 4.468-.806 5.957-2.18L15.05 16.56c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H3.958v2.332A9 9 0 0 0 12.001 21">
+                                    </path>
+                                    <path id="Shape_3" fill="#FBBC05"
+                                        d="M6.964 13.712a5.4 5.4 0 0 1-.282-1.71c0-.593.102-1.17.282-1.71V7.96H3.957A9 9 0 0 0 3 12.002c0 1.452.348 2.827.957 4.042z">
+                                    </path>
+                                    <path id="Shape_4" fill="#EA4335"
+                                        d="M12 6.58c1.322 0 2.508.455 3.441 1.346l2.582-2.58C16.463 3.892 14.427 3 12 3a9 9 0 0 0-8.043 4.958l3.007 2.332c.708-2.127 2.692-3.71 5.036-3.71">
+                                    </path>
+                                </g>
+                            </g>
+
+                        </svg>
+
+                        <span style="color: black;">Sign in</span>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </nav>
     <div class="container">
         {% block content %}
@@ -59,4 +118,12 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 </body>
+
+<style>
+    /* Apply underline to the span when the parent link is hovered */
+    #sign-in-button:hover span {
+        text-decoration: underline;
+    }
+</style>
+
 </html>

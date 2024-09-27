@@ -8,3 +8,5 @@ assets-*/*
 assets-224-filename-kaggle.csv
 .venv/*
 *play.ipynb
+*rough.ipynb
+sqllite.db
