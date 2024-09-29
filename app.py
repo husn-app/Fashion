@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session
+from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session, flash
 import open_clip
 import pandas as pd
 import time
@@ -10,8 +10,9 @@ from authlib.integrations.flask_client import OAuth
 import requests
 from .config import Config
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
-from .user import User
+from .models import User, Product
 from .db import db
+from flask_migrate import Migrate
 
 torch.set_grad_enabled(False)
 model, preprocess, tokenizer = None, None, None
@@ -75,10 +76,12 @@ assert similar_products_cached is not None
 app = Flask(__name__)
 app.config.from_object(Config)  
 db.init_app(app)
+migrate = Migrate(app, db)
 
 # Initialize LoginManager
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+login_manager.login_message = 'Please login to perform this action.'
 
 @login_manager.user_loader
 def load_user(id):
@@ -87,12 +90,12 @@ def load_user(id):
     except ValueError:
         return None
 
-with app.app_context():
-    db.create_all()
 
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     client_kwargs={
         'scope': 'openid email profile',
@@ -178,7 +181,12 @@ def web_product(index):
     result, error, status_code = process_product(index)
     if error:
         return redirect('/')
-    return render_template('product.html', **result)
+    is_wishlisted = False
+    if current_user.is_authenticated:
+        product_db = Product.query.filter_by(productId=str(result['current_product'].get('productId'))).first()
+        if product_db and product_db in current_user.wishlisted_products:
+            is_wishlisted = True
+    return render_template('product.html', **result, is_wishlisted=is_wishlisted)
 
 @app.route('/api/product/<index>')
 def api_product(index):
@@ -203,26 +211,29 @@ def refresh_token():
     if response.status_code == 200:
         # If successful, the response will contain the new access token
         token_data = response.json()
-        print("New access token:", token_data)
         session['access_token'] = token_data.get('access_token')
         session['expires_at'] = (int)(time.time()) + token_data['expires_in']
         return True
-    print(f"Error: {response.status_code}")
-    print(f"{response.text=}")
+    print(f"Refresh failed: {response.text=}")
     return False
 
 
 def check_and_refresh_token():
     expires_at = session.get('expires_at')
-    if not expires_at or expires_at < time.time(): # Change incorrect comparison
+    if not expires_at or expires_at < time.time():
         if refresh_token():
-            print(f"Refresing succeeded:{session=}")
             return True
-        print(f"Refresh failed, redirect to /login. {session=}")
         return False
     return True
 
-# Route for login
+@app.before_request
+def check_token_for_authenticated_user():
+    if current_user.is_authenticated:
+        if not check_and_refresh_token():
+            logout_user()
+            return redirect(url_for('login'))
+
+
 @app.route('/login')
 def login():
     if current_user.is_authenticated:
@@ -230,31 +241,21 @@ def login():
     redirect_uri = url_for('authorize', _external=True)
     return google.authorize_redirect(redirect_uri, access_type="offline") # needed for refresh token
 
-# Route for authorization callback
 @app.route('/authorize')
 def authorize():
-    print(f"{request.args=}")
     if current_user.is_authenticated:
         return redirect('/')
     
-    print(f"{json.dumps(request.args, indent=4)}")
     token = google.authorize_access_token()
-    print(f"{token=}\n {type(token)=}\n{type(google)=}")
     resp = google.get('userinfo')
-    print(f"{resp=}")
     user_info = resp.json()
-    print(f"{user_info=}")
 
     user = User.query.filter_by(email=user_info['email']).first()
     if not user:
-        print(f"user not found, creating in table")
         user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
                     given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
                     picture_url=user_info.get('picture'))
         db.session.add(user)
-        print(f"Created {user=}")
-    else:
-        print(f"user found already in table:{user=}")
     user.refresh_token = token.get('refresh_token')
     db.session.commit()
 
@@ -266,7 +267,6 @@ def authorize():
     response = make_response(redirect(next_url))
     return response
 
-# Route for logout
 @app.route('/logout')
 def logout():
     logout_user()
@@ -274,14 +274,63 @@ def logout():
     session.pop('expires_at', None)
     return redirect('/')
 
-# Example protected route
 @app.route('/profile')
 @login_required
 def profile():
-    if check_and_refresh_token():
-        return render_template('profile.html', user=current_user)
-    session['next_url'] = request.url
-    return redirect('/')
+    return render_template('profile.html', user=current_user)
+
+@app.route('/wishlist/<int:index>', methods=['POST'])
+@login_required
+def toggle_wishlist_product(index):
+    # Check if the product exists by its string productId
+    product = final_df.iloc[index]
+    product_db = Product.query.filter_by(productId=str(product['productId'])).first()
+    if not product_db:
+        # Create a new Product instance with data from the product series
+        new_product = Product(
+            index=index,
+            landingPageUrl=product.get('landingPageUrl'),
+            productId=str(product['productId']),
+            product=product['product'],
+            productName=product['productName'],
+            rating=product.get('rating'),
+            ratingCount=product.get('ratingCount'),
+            brand=product.get('brand'),
+            searchImage=product.get('searchImage'),
+            sizes=product.get('sizes'),
+            gender=product.get('gender'),
+            primaryColour=product.get('primaryColour'),
+            additionalInfo=product.get('additionalInfo'),
+            category=product.get('category'),
+            price=product['price'],
+            articleType=product.get('articleType'),
+            subCategory=product.get('subCategory'),
+            masterCategory=product.get('masterCategory')
+        )
+        print(f"Creating new product: {new_product=}")
+        db.session.add(new_product)
+        db.session.commit()
+        product_db = new_product
+
+    # Toggle the product in the user's wishlist
+    if product_db in current_user.wishlisted_products:
+        current_user.wishlisted_products.remove(product_db)
+        db.session.commit()
+        return jsonify({"is_wishlisted": False}), 200
+    else:
+        current_user.wishlisted_products.append(product_db)
+        db.session.commit()
+        return jsonify({"is_wishlisted": True}), 200
+
+
+@app.route('/wishlist')
+@login_required
+def wishlist():
+    wishlisted_products = current_user.wishlisted_products
+    wishlisted_indices = [product.index for product in wishlisted_products]
+    products = final_df.iloc[wishlisted_indices].to_dict('records')
+    return render_template('wishlist.html', products=products)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
