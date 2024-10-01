@@ -78,6 +78,9 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate = Migrate(app, db)
 
+assert app.config['GOOGLE_CLIENT_ID'] is not None
+assert app.config['GOOGLE_CLIENT_SECRET'] is not None
+
 # Initialize LoginManager
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -238,6 +241,7 @@ def check_token_for_authenticated_user():
 def login():
     if current_user.is_authenticated:
         return redirect('/')
+    session['next_url'] = request.args.get('next', '/')
     redirect_uri = url_for('authorize', _external=True)
     return google.authorize_redirect(redirect_uri, access_type="offline") # needed for refresh token
 
@@ -245,23 +249,25 @@ def login():
 def authorize():
     if current_user.is_authenticated:
         return redirect('/')
-    
-    token = google.authorize_access_token()
-    resp = google.get('userinfo')
-    user_info = resp.json()
+    try:
+        token = google.authorize_access_token()
+        resp = google.get('userinfo')
+        user_info = resp.json()
 
-    user = User.query.filter_by(email=user_info['email']).first()
-    if not user:
-        user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
-                    given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
-                    picture_url=user_info.get('picture'))
-        db.session.add(user)
-    user.refresh_token = token.get('refresh_token')
-    db.session.commit()
+        user = User.query.filter_by(email=user_info['email']).first()
+        if not user:
+            user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
+                        given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
+                        picture_url=user_info.get('picture'))
+            db.session.add(user)
+        user.refresh_token = token.get('refresh_token')
+        db.session.commit()
 
-    session['access_token'] = token.get('access_token')
-    session['expires_at'] = token.get('expires_at')
-    login_user(user)
+        session['access_token'] = token.get('access_token')
+        session['expires_at'] = token.get('expires_at')
+        login_user(user)
+    except Exception as ex:
+        print(f"Couldn't login user:{ex}")
 
     next_url = session.pop('next_url', '/')
     response = make_response(redirect(next_url))

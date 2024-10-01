@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-
+{% if products %}
 {% include 'products-list.html' %}
+{% else %}
+<h5 style="text-align: center; font-family: 'Times New Roman', Times, serif; color: black;">No products in wishlist</h5>
+{% endif %}
+
 {% endblock %}
