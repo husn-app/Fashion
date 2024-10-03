@@ -93,6 +93,8 @@ def load_user(id):
         return User.query.get(int(id))
     except ValueError:
         return None
+    except Exception as ex:
+        print(f"Couldnt load user:{ex}")
 
 with app.app_context():
     db.create_all()
@@ -110,7 +112,6 @@ google = oauth.register(
 )
 
 @app.route('/')
-@app.route('/index')
 def home():
     return render_template('landingpage.html')
 
@@ -207,26 +208,23 @@ def refresh_token():
     response = requests.post(app.config['REFRESH_TOKEN_URL'], data=data, headers=headers)
 
     # Check the response
-    if response.status_code == 200:
-        # If successful, the response will contain the new access token
-        token_data = response.json()
-        print("New access token:", token_data)
-        session['access_token'] = token_data.get('access_token')
-        session['expires_at'] = (int)(time.time()) + token_data['expires_in']
-        return True
-    print(f"Error: {response.status_code}")
-    print(f"{response.text=}")
-    return False
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}\n{response.text}")
+        return False
+    
+    token_data = response.json()
+    print("New access token:", token_data)
+    session['access_token'] = token_data.get('access_token')
+    session['expires_at'] = (int)(time.time()) + token_data['expires_in']
+    return True
 
 
 def check_and_refresh_token():
     expires_at = session.get('expires_at')
-    if not expires_at or expires_at < time.time(): # Change incorrect comparison
-        if refresh_token():
-            print(f"Refresing succeeded:{session=}")
-            return True
-        print(f"Refresh failed, redirect to /login. {session=}")
-        return False
+    if not expires_at or expires_at < time.time():
+        if not refresh_token():
+            print(f"Refresh failed, redirect to /login. {session=}")
+            return False
     return True
 
 # Route for login
