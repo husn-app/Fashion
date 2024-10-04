@@ -6,6 +6,10 @@ import torch
 import torch.nn.functional as F
 import faiss
 
+DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
+
+ROOT_DIR = '/husn-cool-storage/' if (DEPLOYMENT_TYPE == 'PROD') else './'
+
 torch.set_grad_enabled(False)
 
 model, preprocess, tokenizer = None, None, None
@@ -27,7 +31,7 @@ def init_final_df():
     global final_df
     print('Reading products data...')
     start_time = time.time()
-    PRODUCTS_CSV_PATH = 'products_minimal.csv'
+    PRODUCTS_CSV_PATH = ROOT_DIR + 'products_minimal.csv'
 
     final_df = pd.read_csv(PRODUCTS_CSV_PATH)
     print('Read products data\tTime taken: ', time.time() - start_time)
@@ -36,7 +40,7 @@ def init_image_embeddings():
     global image_embeddings
     print('Reading image embeddings...')
     start_time = time.time()
-    image_embeddings = F.normalize(torch.load('image_embeddings_kaggle.pt'), dim=-1).detach().numpy()
+    image_embeddings = F.normalize(torch.load(ROOT_DIR + 'image_embeddings_kaggle.pt'), dim=-1).detach().numpy()
     print('Read image embeddings.\nTime Taken: ', time.time() - start_time)
     
 def init_faiss_index():
@@ -51,7 +55,7 @@ def init_ml():
     init_model()
     init_image_embeddings()
     init_faiss_index()
-    similar_products_cached = torch.load('similar_products_cached.pt')
+    similar_products_cached = torch.load(ROOT_DIR + 'similar_products_cached.pt')
     
 
 init_ml()
