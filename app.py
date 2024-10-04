@@ -5,6 +5,7 @@ import time
 import torch
 import torch.nn.functional as F
 import faiss
+import os
 
 DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
 
