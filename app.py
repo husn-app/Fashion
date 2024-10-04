@@ -23,6 +23,8 @@ def init_model():
     print('Initializing model...')
     start_time = time.time()
     model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k')
+    model.visual = None
+    model = torch.compile(model)
     tokenizer = open_clip.get_tokenizer('ViT-B-32')
     print('Initialized model.\tTime Taken: ', time.time() - start_time)
 
