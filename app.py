@@ -101,8 +101,12 @@ def process_query(query):
     products = final_df.iloc[topk_indices].to_dict('records')
     return {"query": query, "products": products, "scores": topk_scores.tolist()}, None, 200
 
-@app.route('/query/<query>')
+# Path captures anything that comes after /query. So any other routes like /query/some-route/<> won't work. 
+@app.route('/query/<path:query>')
 def web_query(query):
+    # Frontend slugifies the urls by converting spaces to ' '. 
+    query = query.replace('-', ' ')
+    
     result, error, status_code = process_query(query)
     if error:
         return error, status_code
@@ -145,8 +149,8 @@ def process_product(index):
         "topk_scores": []
     }, None, 200
 
-@app.route('/product/<index>')
-def web_product(index):
+@app.route('/product/<string:slug>/<int:index>')
+def web_product(slug, index):
     result, error, status_code = process_product(index)
     if error:
         return redirect('/')

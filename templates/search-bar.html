@@ -11,11 +11,13 @@
         function submitForm(event) {
             event.preventDefault();
             let query = document.getElementById('query').value;
-            if (query.trim() === '') {
+            query = query.trim()
+            if (query === '') {
                 return;
             }
             trackSearch(query)
-            window.location.href = '/query/' + query;
+            query = query.replace(/\s+/g, '-'); 
+            window.location.href = '/query/' + encodeURIComponent(query);
         }
     </script>
     <form onsubmit="submitForm(event);">

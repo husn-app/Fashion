@@ -13,8 +13,8 @@
 <div class="card h-100" style="border: 0 !important; background-color:transparent;">
     <!-- Product Image  -->
      {% set primary_image = product['primary_image'].replace('/assets/', '/f_webp,q_60/w_480/v1/assets/') if not is_main_product else product['primary_image'] %}
-
-    <a href="/product/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
+    {% set slug = product['product_url'].split('/')[-3] %}
+    <a href="/product/{{slug}}/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
             style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}"
             alt="{{ product['title'] }}"></a>
 
