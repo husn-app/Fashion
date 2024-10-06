@@ -2,7 +2,7 @@ blinker==1.8.2
 certifi==2024.7.4
 charset-normalizer==3.3.2
 click==8.1.7
-faiss-cpu==1.8.0.post1
+faiss-cpu==1.7.4
 filelock==3.15.4
 Flask==3.0.3
 fsspec==2024.6.1
