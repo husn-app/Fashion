@@ -107,7 +107,6 @@ def web_query(query):
     # Frontend slugifies the urls by converting spaces to ' '. 
     query = query.replace('-', ' ')
     
-    print('QUery: ', query)
     result, error, status_code = process_query(query)
     if error:
         return error, status_code
@@ -150,8 +149,8 @@ def process_product(index):
         "topk_scores": []
     }, None, 200
 
-@app.route('/product/<index>')
-def web_product(index):
+@app.route('/product/<string:slug>/<int:index>')
+def web_product(slug, index):
     result, error, status_code = process_product(index)
     if error:
         return redirect('/')
