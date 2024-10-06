@@ -9,7 +9,7 @@ import os
 
 DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
 
-ROOT_DIR = os.environ.get('DATA_ROOT_DIR', '/husn-cool-storage/20231014') if (DEPLOYMENT_TYPE == 'PROD') else './'
+ROOT_DIR = os.environ.get('DATA_ROOT_DIR', '/husn-cool-storage/20231014/') if (DEPLOYMENT_TYPE == 'PROD') else './'
 
 torch.set_grad_enabled(False)
 
