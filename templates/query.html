@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block seo %}
+    {% set seo_image = products[0]['primary_image'].replace('/assets/', '/w_720/v1/assets/') %}
+    <meta property="og:image" content="{{ seo_image }}">
+    <meta property="og:title" content="{{ query | default('') }}"/>  
+{% endblock %}
+
 {% block content %}
 <div class="row mb-2 mt-2 px-0">
 {% include "search-bar.html"%}
