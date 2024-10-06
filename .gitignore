@@ -8,6 +8,6 @@ assets-*/*
 assets-224-filename-kaggle.csv
 .venv/*
 *play.ipynb
-image_embeddings_kaggle.pt
+image_embeddings_normalized.pt
 products_minimal.csv
-similar_products_cached.pt
+similar_products_cache.pt

@@ -9,7 +9,7 @@ import os
 
 DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
 
-ROOT_DIR = '/husn-cool-storage/' if (DEPLOYMENT_TYPE == 'PROD') else './'
+ROOT_DIR = os.environ.get('DATA_ROOT_DIR', '/husn-cool-storage/20231014') if (DEPLOYMENT_TYPE == 'PROD') else './'
 
 torch.set_grad_enabled(False)
 
@@ -17,7 +17,7 @@ model, preprocess, tokenizer = None, None, None
 final_df = None
 image_embeddings = None
 faiss_index = None
-similar_products_cached = None
+similar_products_cache = None
 
 def init_model():
     global model, preprocess, tokenizer
@@ -43,7 +43,7 @@ def init_image_embeddings():
     global image_embeddings
     print('Reading image embeddings...')
     start_time = time.time()
-    image_embeddings = F.normalize(torch.load(ROOT_DIR + 'image_embeddings_kaggle.pt'), dim=-1).detach().numpy()
+    image_embeddings = F.normalize(torch.load(ROOT_DIR + 'image_embeddings_normalized.pt'), dim=-1).detach().numpy()
     print('Read image embeddings.\nTime Taken: ', time.time() - start_time)
     
 def init_faiss_index():
@@ -52,13 +52,13 @@ def init_faiss_index():
     faiss_index.add(image_embeddings) 
 
 def init_ml():
-    global similar_products_cached
+    global similar_products_cache
     init_final_df()
     
     init_model()
     init_image_embeddings()
     init_faiss_index()
-    similar_products_cached = torch.load(ROOT_DIR + 'similar_products_cached.pt')
+    similar_products_cache = torch.load(ROOT_DIR + 'similar_products_cache.pt')
     
 
 init_ml()
@@ -71,7 +71,7 @@ assert final_df is not None
 # Assert embeddings
 assert image_embeddings is not None
 assert faiss_index is not None
-assert similar_products_cached is not None
+assert similar_products_cache is not None
 
 app = Flask(__name__)
 
@@ -118,7 +118,7 @@ def api_query():
     return jsonify(result)
 
 def process_product(index):
-    global image_embeddings, final_df, similar_products_cached
+    global image_embeddings, final_df, similar_products_cache
 
     if isinstance(index, str) and index.startswith('myntra-'):
         index = index[len('myntra-'):]
@@ -135,7 +135,7 @@ def process_product(index):
 
     # topk_indices, topk_scores = getTopK(image_embeddings[index])
      # We use cached similar products, instead of computing similarity online. 
-    topk_indices = similar_products_cached[index][:100]
+    topk_indices = similar_products_cache[index][:100]
 
     products = final_df.iloc[topk_indices.tolist()].to_dict('records')
     current_product = final_df.iloc[index].to_dict()

@@ -19,25 +19,25 @@
      they're cropping the image at run-time for non-conventional sizes. Surprisingly even at 1440x1080px,
      the download speed is quite good at ~15ms on my laptop. Take a decision later on calling smaller
      sizes of assets or not, for low bandwidth. -->
-    <a href="/product/{{ product['index'] }}" onclick="trackProductClick('{{ product['index'] }}'); return true;"><img
-            style="border-radius:15px;" class="card-img-top" src="{{ product['searchImage'] }}"
+    <a href="/product/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
+            style="border-radius:15px;" class="card-img-top" src="{{ product['primary_image'] }}"
             alt="{{ product['title'] }}"></a>
 
     <div class="card-body px-1 pt-1" style="background-color:transparent !important;">
         <!-- Product Brand and name -->
-        {% set product_name = product['product'].replace(product['brand'], '').replace('Men', '').replace('Women', '')
+        {% set product_name = product['product_name'].replace(product['brand'], '')
         %}
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex flex-column">
                 <!-- Product Rating -->
                 <div class="d-flex flex-row pr-1 my-1" style="font-size: 12px;">
-                    {% if product['ratingCount'] > 0 and is_main_product %}
+                    {% if product['rating_count'] > 0 and is_main_product %}
                     <span class="mr-2">
                         {{ '%.1f'|format(product['rating']) }} <span style="color:burlywood;">&#9733;</span>
                     </span>
 
                     <!-- remove
-                        product['ratingCount'] }} -->
+                        product['rating_count'] }} -->
                     {% endif %}
 
                     {% if is_main_product %}
@@ -57,7 +57,7 @@
             <div class="d-flex align-items-center mx-1">
 
                 <!-- Product Original Url -->
-                <a class="px-1" style="margin-top:-10px" href="https://myntra.com/{{ product['landingPageUrl'] }}">
+                <a class="px-1" style="margin-top:-10px" href="{{ product['product_url'] }}">
                     <img src="/static/myntra-logo.svg" alt="View Product on Myntra" style="width: 40px; height: 40px;">
                 </a>
 
