@@ -11,3 +11,5 @@ assets-224-filename-kaggle.csv
 image_embeddings_normalized.pt
 products_minimal.csv
 similar_products_cache.pt
+*rough.ipynb
+sqllite.db

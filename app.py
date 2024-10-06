@@ -1,18 +1,24 @@
-from flask import Flask, jsonify, render_template, redirect, request
+from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session
 import open_clip
 import pandas as pd
 import time
 import torch
 import torch.nn.functional as F
 import faiss
+import json
+from authlib.integrations.flask_client import OAuth
+import requests
+from .config import Config
+from flask_login import LoginManager, login_user, current_user, login_required, logout_user
+from .user import User
+from .db import db
 import os
 
-DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
-
-ROOT_DIR = os.environ.get('DATA_ROOT_DIR', '/husn-cool-storage/20231014/') if (DEPLOYMENT_TYPE == 'PROD') else './'
+app = Flask(__name__)
+app.config.from_object(Config)  
+db.init_app(app)
 
 torch.set_grad_enabled(False)
-
 model, preprocess, tokenizer = None, None, None
 final_df = None
 image_embeddings = None
@@ -34,7 +40,7 @@ def init_final_df():
     global final_df
     print('Reading products data...')
     start_time = time.time()
-    PRODUCTS_CSV_PATH = ROOT_DIR + 'products_minimal.csv'
+    PRODUCTS_CSV_PATH = app.config['DATA_ROOT_DIR'] + 'products_minimal.csv'
 
     final_df = pd.read_csv(PRODUCTS_CSV_PATH)
     print('Read products data\tTime taken: ', time.time() - start_time)
@@ -43,7 +49,7 @@ def init_image_embeddings():
     global image_embeddings
     print('Reading image embeddings...')
     start_time = time.time()
-    image_embeddings = F.normalize(torch.load(ROOT_DIR + 'image_embeddings_normalized.pt'), dim=-1).detach().numpy()
+    image_embeddings = F.normalize(torch.load(app.config['DATA_ROOT_DIR'] + 'image_embeddings_normalized.pt'), dim=-1).detach().numpy()
     print('Read image embeddings.\nTime Taken: ', time.time() - start_time)
     
 def init_faiss_index():
@@ -58,7 +64,7 @@ def init_ml():
     init_model()
     init_image_embeddings()
     init_faiss_index()
-    similar_products_cache = torch.load(ROOT_DIR + 'similar_products_cache.pt')
+    similar_products_cache = torch.load(app.config['DATA_ROOT_DIR'] + 'similar_products_cache.pt')
     
 
 init_ml()
@@ -73,7 +79,35 @@ assert image_embeddings is not None
 assert faiss_index is not None
 assert similar_products_cache is not None
 
-app = Flask(__name__)
+assert app.config['GOOGLE_CLIENT_ID'] is not None
+assert app.config['GOOGLE_CLIENT_SECRET'] is not None
+# Initialize LoginManager
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(id):
+    try:
+        return User.query.get(int(id))
+    except ValueError:
+        return None
+    except Exception as ex:
+        print(f"Couldnt load user:{ex}")
+
+with app.app_context():
+    db.create_all()
+
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    client_kwargs={
+        'scope': 'openid email profile',
+        'access_type': 'offline',   # to get refresh token
+        'prompt': 'consent',        # to ensure refresh token is received
+    },
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+)
 
 @app.route('/')
 def home():
@@ -162,6 +196,94 @@ def api_product(index):
     if error:
         return jsonify({"error": error}), status_code
     return jsonify(result)
+
+def refresh_token():
+    data = {
+        "client_id": app.config['GOOGLE_CLIENT_ID'],
+        "client_secret": app.config['GOOGLE_CLIENT_SECRET'],
+        "refresh_token": current_user.refresh_token,
+        "grant_type": "refresh_token"
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    response = requests.post(app.config['REFRESH_TOKEN_URL'], data=data, headers=headers)
+
+    # Check the response
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}\n{response.text}")
+        return False
+    
+    token_data = response.json()
+    print("New access token:", token_data)
+    session['access_token'] = token_data.get('access_token')
+    session['expires_at'] = (int)(time.time()) + token_data['expires_in']
+    return True
+
+
+def check_and_refresh_token():
+    expires_at = session.get('expires_at')
+    if not expires_at or expires_at < time.time():
+        if not refresh_token():
+            print(f"Refresh failed, redirect to /login. {session=}")
+            return False
+    return True
+
+# Route for login
+@app.route('/login')
+def login():
+    if current_user.is_authenticated:
+        return redirect('/')
+    redirect_uri = url_for('authorize', _external=True)
+    return google.authorize_redirect(redirect_uri, access_type="offline") # needed for refresh token
+
+# Route for authorization callback
+@app.route('/authorize')
+def authorize():
+    if current_user.is_authenticated:
+        return redirect('/')
+    try:
+        token = google.authorize_access_token()
+        resp = google.get('userinfo')
+        user_info = resp.json()
+
+        user = User.query.filter_by(email=user_info['email']).first()
+        if not user:
+            user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
+                        given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
+                        picture_url=user_info.get('picture'))
+            db.session.add(user)
+            print(f"Created {user=}")
+
+        user.refresh_token = token.get('refresh_token')
+        db.session.commit()
+
+        session['access_token'] = token.get('access_token')
+        session['expires_at'] = token.get('expires_at')
+        login_user(user)
+    except Exception as ex:
+        print(f"Couldn't login user:{ex}")
+
+    next_url = session.pop('next_url', '/')
+    response = make_response(redirect(next_url))
+    return response
+
+# Route for logout
+@app.route('/logout')
+def logout():
+    logout_user()
+    session.pop('access_token', None)
+    session.pop('expires_at', None)
+    return redirect('/')
+
+# Example protected route
+@app.route('/profile')
+@login_required
+def profile():
+    if check_and_refresh_token():
+        return render_template('profile.html', user=current_user)
+    session['next_url'] = request.url
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug=True)
