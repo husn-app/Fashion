@@ -14,9 +14,9 @@ from .user import User
 from .db import db
 import os
 
-DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
-
-ROOT_DIR = os.environ.get('DATA_ROOT_DIR', '/husn-cool-storage/20231014/') if (DEPLOYMENT_TYPE == 'PROD') else './'
+app = Flask(__name__)
+app.config.from_object(Config)  
+db.init_app(app)
 
 torch.set_grad_enabled(False)
 model, preprocess, tokenizer = None, None, None
@@ -40,7 +40,7 @@ def init_final_df():
     global final_df
     print('Reading products data...')
     start_time = time.time()
-    PRODUCTS_CSV_PATH = ROOT_DIR + 'products_minimal.csv'
+    PRODUCTS_CSV_PATH = app.config['DATA_ROOT_DIR'] + 'products_minimal.csv'
 
     final_df = pd.read_csv(PRODUCTS_CSV_PATH)
     print('Read products data\tTime taken: ', time.time() - start_time)
@@ -49,7 +49,7 @@ def init_image_embeddings():
     global image_embeddings
     print('Reading image embeddings...')
     start_time = time.time()
-    image_embeddings = F.normalize(torch.load(ROOT_DIR + 'image_embeddings_normalized.pt'), dim=-1).detach().numpy()
+    image_embeddings = F.normalize(torch.load(app.config['DATA_ROOT_DIR'] + 'image_embeddings_normalized.pt'), dim=-1).detach().numpy()
     print('Read image embeddings.\nTime Taken: ', time.time() - start_time)
     
 def init_faiss_index():
@@ -64,7 +64,7 @@ def init_ml():
     init_model()
     init_image_embeddings()
     init_faiss_index()
-    similar_products_cache = torch.load(ROOT_DIR + 'similar_products_cache.pt')
+    similar_products_cache = torch.load(app.config['DATA_ROOT_DIR'] + 'similar_products_cache.pt')
     
 
 init_ml()
@@ -79,10 +79,8 @@ assert image_embeddings is not None
 assert faiss_index is not None
 assert similar_products_cache is not None
 
-app = Flask(__name__)
-app.config.from_object(Config)  
-db.init_app(app)
-
+assert app.config['GOOGLE_CLIENT_ID'] is not None
+assert app.config['GOOGLE_CLIENT_SECRET'] is not None
 # Initialize LoginManager
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -238,34 +236,29 @@ def login():
 # Route for authorization callback
 @app.route('/authorize')
 def authorize():
-    print(f"{request.args=}")
     if current_user.is_authenticated:
         return redirect('/')
-    
-    print(f"{json.dumps(request.args, indent=4)}")
-    token = google.authorize_access_token()
-    print(f"{token=}\n {type(token)=}\n{type(google)=}")
-    resp = google.get('userinfo')
-    print(f"{resp=}")
-    user_info = resp.json()
-    print(f"{user_info=}")
+    try:
+        token = google.authorize_access_token()
+        resp = google.get('userinfo')
+        user_info = resp.json()
 
-    user = User.query.filter_by(email=user_info['email']).first()
-    if not user:
-        print(f"user not found, creating in table")
-        user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
-                    given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
-                    picture_url=user_info.get('picture'))
-        db.session.add(user)
-        print(f"Created {user=}")
-    else:
-        print(f"user found already in table:{user=}")
-    user.refresh_token = token.get('refresh_token')
-    db.session.commit()
+        user = User.query.filter_by(email=user_info['email']).first()
+        if not user:
+            user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
+                        given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
+                        picture_url=user_info.get('picture'))
+            db.session.add(user)
+            print(f"Created {user=}")
 
-    session['access_token'] = token.get('access_token')
-    session['expires_at'] = token.get('expires_at')
-    login_user(user)
+        user.refresh_token = token.get('refresh_token')
+        db.session.commit()
+
+        session['access_token'] = token.get('access_token')
+        session['expires_at'] = token.get('expires_at')
+        login_user(user)
+    except Exception as ex:
+        print(f"Couldn't login user:{ex}")
 
     next_url = session.pop('next_url', '/')
     response = make_response(redirect(next_url))
