@@ -12,15 +12,10 @@
 
 <div class="card h-100" style="border: 0 !important; background-color:transparent;">
     <!-- Product Image  -->
-    <!-- TODO (pshishodia) : Currently, the search image seem to be all 3:4, 1440x1080px.
-     They're rendered on (Pixel7) as 199x265 px. Myntra allows newer api to retrive iamges:
-     https://assets.myntassets.com/h_1080,q_80,w_1440/v1/assets/images/* where h_ , w_, q_ can be replaced.
-     I saw that at lower values download timing is neglible <= 1ms, but server time increases, maybe because 
-     they're cropping the image at run-time for non-conventional sizes. Surprisingly even at 1440x1080px,
-     the download speed is quite good at ~15ms on my laptop. Take a decision later on calling smaller
-     sizes of assets or not, for low bandwidth. -->
+     {% set primary_image = product['primary_image'].replace('/assets/', '/f_webp,q_60/w_480/v1/assets/') if not is_main_product else product['primary_image'] %}
+
     <a href="/product/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
-            style="border-radius:15px;" class="card-img-top" src="{{ product['primary_image'] }}"
+            style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}"
             alt="{{ product['title'] }}"></a>
 
     <div class="card-body px-1 pt-1" style="background-color:transparent !important;">

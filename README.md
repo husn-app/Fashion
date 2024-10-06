@@ -6,6 +6,16 @@
     - doesn't use f_webp somehow even thouogh it's smaller and difference is not noticeable. 
 
 
+Notes from TODO:
+Currently, the search image seem to be all 3:4, 1440x1080px.
+They're rendered on (Pixel7) as 199x265 px. Myntra allows newer api to retrive iamges:
+https://assets.myntassets.com/h_1080,q_80,w_1440/v1/assets/images/* where h_ , w_, q_ can be replaced.
+I saw that at lower values download timing is neglible <= 1ms, but server time increases, maybe because 
+they're cropping the image at run-time for non-conventional sizes. Surprisingly even at 1440x1080px,
+the download speed is quite good at ~15ms on my laptop. Take a decision later on calling smaller
+sizes of assets or not, for low bandwidth.
+
+
 ### Retrieval Models
 1. Retrieval results for some of the famous models including SigLiP are in [open_clip/openclip_retrieval_results](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_retrieval_results.csv), sorted results are in this [doc](https://docs.google.com/spreadsheets/d/1ilPJexX2m03QtX74iaeGCdBQ3sVm5jYqQ0Kv2BgrDe0/edit?gid=1066211703#gid=1066211703)
 2. There are two heads one for image and one for text. We can load only the text module for now.
