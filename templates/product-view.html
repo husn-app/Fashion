@@ -8,6 +8,33 @@
         /* number of lines to show */
         -webkit-box-orient: vertical;
     }
+
+    .wishlist-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .wishlist-button svg {
+        width: 24px;
+        height: 24px;
+        color: red;
+    }
+
+    .heart-icon {
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: red;
+        stroke-width: 2px;
+    }
+
+    .heart-icon.wishlisted {
+        fill: red;
+    }
 </style>
 
 <div class="card h-100" style="border: 0 !important; background-color:transparent;">
@@ -17,7 +44,19 @@
     <a href="/product/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
             style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}"
             alt="{{ product['title'] }}"></a>
-
+    
+    {% if current_user.is_authenticated and is_main_product %}
+    <button class="wishlist-button" data-index="{{ product['index'] }}">
+        <svg class="heart-icon {% if is_wishlisted %}wishlisted{% endif %}" xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+                        2 5.41 4.42 3 7.5 3c1.74 0 3.41 0.81
+                        4.5 2.09C13.09 3.81 14.76 3 16.5 3
+                        19.58 3 22 5.41 22 8.5c0 3.78-3.4
+                        6.86-8.55 11.54L12 21.35z" />
+        </svg>
+    </button>
+    {% endif %}
     <div class="card-body px-1 pt-1" style="background-color:transparent !important;">
         <!-- Product Brand and name -->
         {% set product_name = product['product_name'].replace(product['brand'], '')
@@ -61,3 +100,42 @@
         </div>
     </div>
 </div>
+
+{% if is_main_product and current_user.is_authenticated %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var wishlistButtons = document.querySelectorAll('.wishlist-button');
+        wishlistButtons.forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                var index = this.dataset.index;
+                var heartIcon = this.querySelector('.heart-icon');
+
+                // Send POST request to toggle wishlist status
+                fetch('/wishlist/' + index, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.is_wishlisted) {
+                            // When the product is added to the wishlist
+                            console.log('Added to wishlist');
+                            heartIcon.classList.add('wishlisted');  // Ensure the class is added to fill the heart
+                        } else {
+                            // When the product is removed from the wishlist
+                            console.log('Removed from wishlist');
+                            heartIcon.classList.remove('wishlisted');  // Ensure the class is removed to unfill the heart
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            });
+        });
+    });
+</script>
+{% endif %}

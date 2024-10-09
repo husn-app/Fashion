@@ -10,5 +10,5 @@ class Config(object):
     REFRESH_TOKEN_URL = "https://oauth2.googleapis.com/token"
     SESSION_COOKIE_HTTPONLY = True 
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
-        'sqlite:///' + os.path.join(basedir, 'sqllite.db')
+        'sqlite:///' + os.path.join(basedir, 'sqlite.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

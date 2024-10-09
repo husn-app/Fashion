@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if not products %}
+    <h3>Your wishlist is currently empty</h3>
+{% else %}
+    {% include 'products-list.html' %}
+{% endif %}
+
+{% endblock %}
