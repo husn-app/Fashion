@@ -10,13 +10,15 @@ from authlib.integrations.flask_client import OAuth
 import requests
 from config import Config
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
-from user import User
+from models import User, WishlistItem
 from db import db
+from flask_migrate import Migrate
 import os
 
 app = Flask(__name__)
 app.config.from_object(Config)  
 db.init_app(app)
+migrate = Migrate(app, db)
 
 torch.set_grad_enabled(False)
 model, preprocess, tokenizer = None, None, None
@@ -94,8 +96,6 @@ def load_user(id):
     except Exception as ex:
         print(f"Couldnt load user:{ex}")
 
-with app.app_context():
-    db.create_all()
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -188,7 +188,12 @@ def web_product(slug, index):
     result, error, status_code = process_product(index)
     if error:
         return redirect('/')
-    return render_template('product.html', **result)
+    is_wishlisted=False
+    if current_user.is_authenticated:
+        wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_index=index).first()
+        if wishlist_item:
+            is_wishlisted = True
+    return render_template('product.html', **result, is_wishlisted=is_wishlisted)
 
 @app.route('/api/product/<index>')
 def api_product(index):
@@ -284,6 +289,32 @@ def profile():
         return render_template('profile.html', user=current_user)
     session['next_url'] = request.url
     return redirect('/')
+
+@app.route('/wishlist/<int:index>', methods=['POST'])
+@login_required
+def toggle_wishlist_product(index):
+    # wishlist_item = WishlistItem(user_id=current_user.id, product_index=index)
+    wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_index=index).first()
+    if wishlist_item:
+        # Item exists, so remove it from the wishlist
+        db.session.delete(wishlist_item)
+        db.session.commit()
+        print("Item removed from wishlist.")
+        return jsonify({"is_wishlisted": False}), 200
+        # Item does not exist, so add it to the wishlist
+    new_item = WishlistItem(user_id=current_user.id, product_index=index)
+    db.session.add(new_item)
+    db.session.commit()
+    print("Item added to wishlist.")
+    return jsonify({"is_wishlisted": True}), 200
+
+@app.route('/wishlist')
+@login_required
+def wishlist():
+    wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=current_user.id).all()
+    wishlisted_indices = [index[0] for index in wishlisted_products]
+    products = final_df.iloc[wishlisted_indices].to_dict('records')
+    return render_template('wishlist.html', products=products)
 
 if __name__ == '__main__':
     app.run(debug=True)
