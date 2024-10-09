@@ -49,6 +49,7 @@ ptyprocess==0.7.0
 pure_eval==0.2.3
 pycparser==2.22
 Pygments==2.18.0
+pyodbc==5.1.0
 python-dateutil==2.9.0.post0
 pytz==2024.1
 PyYAML==6.0.2
@@ -71,4 +72,3 @@ tzdata==2024.1
 urllib3==2.2.2
 wcwidth==0.2.13
 Werkzeug==3.0.3
-pyodbc==5.1.0
