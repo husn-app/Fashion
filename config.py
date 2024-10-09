@@ -9,6 +9,9 @@ class Config(object):
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
     REFRESH_TOKEN_URL = "https://oauth2.googleapis.com/token"
     SESSION_COOKIE_HTTPONLY = True 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
-        'sqlite:///' + os.path.join(basedir, 'sqlite.db')
+    DATABASE_TYPE = os.environ.get('DATABASE_TYPE')
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'sqlite.db')
+    if os.environ.get('DATABASE_URI') and DATABASE_TYPE == 'PROD':
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
+        
     SQLALCHEMY_TRACK_MODIFICATIONS = False
