@@ -19,6 +19,7 @@ app = Flask(__name__)
 app.config.from_object(Config)  
 db.init_app(app)
 migrate = Migrate(app, db)
+print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}")
 
 torch.set_grad_enabled(False)
 model, preprocess, tokenizer = None, None, None
