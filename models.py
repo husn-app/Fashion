@@ -10,3 +10,9 @@ class User(db.Model, UserMixin):
     family_name = db.Column(db.String(255), nullable=True)  # 'family_name' field
     picture_url = db.Column(db.String(255), nullable=True)  # 'picture' field (URL to profile picture)
     refresh_token = db.Column(db.String(512), nullable=True)
+    wishlisted_products = db.relationship('WishlistItem', backref='user')
+
+class WishlistItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True) # Add a primary key
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    product_index = db.Column(db.Integer, index=True)
