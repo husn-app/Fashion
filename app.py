@@ -8,10 +8,10 @@ import faiss
 import json
 from authlib.integrations.flask_client import OAuth
 import requests
-from .config import Config
+from config import Config
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
-from .user import User
-from .db import db
+from user import User
+from db import db
 import os
 
 app = Flask(__name__)
