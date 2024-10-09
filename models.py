@@ -1,5 +1,7 @@
 from db import db
 from flask_login import UserMixin
+from datetime import datetime
+import pytz
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, index=True)  # Internal ID for your app
@@ -16,3 +18,4 @@ class WishlistItem(db.Model):
     id = db.Column(db.Integer, primary_key=True) # Add a primary key
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     product_index = db.Column(db.Integer, index=True)
+    created_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
