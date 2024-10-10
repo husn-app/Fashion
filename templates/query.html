@@ -8,7 +8,11 @@
 
 {% block content %}
 <div class="row mb-2 mt-2 px-0">
+{% with is_query_page=True %}
 {% include "search-bar.html"%}
+{% endwith %}
+
+
 </div>
 
 
