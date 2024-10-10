@@ -289,7 +289,7 @@ def logout():
     session.pop('access_token', None)
     session.pop('expires_at', None)
     referrer = '/'
-    if request.referrer and not url_for('authorize', _external=True) in request.referrer:
+    if request.referrer and not url_for('authorize', _external=True) in request.referrer and not url_for('wishlist') in request.referrer:
         referrer = request.referrer
     return redirect(referrer)
 
