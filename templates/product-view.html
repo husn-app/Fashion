@@ -18,10 +18,13 @@
         cursor: pointer;
     }
 
-    .wishlist-button svg {
-        width: 24px;
-        height: 24px;
-        color: red;
+    .product-share-button {
+        position: absolute;
+        top: 60px;
+        right: 16px;
+        background: none;
+        border: none;
+        cursor: pointer;
     }
 
     .heart-icon {
@@ -33,29 +36,42 @@
     }
 
     .heart-icon.wishlisted {
-        fill: red;
+        fill: #E04F5A;
     }
 </style>
 
 <div class="card h-100" style="border: 0 !important; background-color:transparent;">
     <!-- Product Image  -->
-     {% set primary_image = product['primary_image'].replace('/assets/', '/f_webp,q_60/w_480/v1/assets/') if not is_main_product else product['primary_image'] %}
+    {% set primary_image = product['primary_image'].replace('/assets/', '/f_webp,q_60/w_480/v1/assets/') if not
+    is_main_product else product['primary_image'] %}
     {% set slug = product['product_url'].split('/')[-3] %}
     <a href="/product/{{slug}}/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
-            style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}"
-            alt="{{ product['title'] }}"></a>
-    
-    {% if current_user.is_authenticated and is_main_product %}
-    <button class="wishlist-button" data-index="{{ product['index'] }}">
-        <svg class="heart-icon {% if is_wishlisted %}wishlisted{% endif %}" xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
-                        2 5.41 4.42 3 7.5 3c1.74 0 3.41 0.81
-                        4.5 2.09C13.09 3.81 14.76 3 16.5 3
-                        19.58 3 22 5.41 22 8.5c0 3.78-3.4
-                        6.86-8.55 11.54L12 21.35z" />
+            style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}" alt="{{ product['title'] }}"></a>
+
+    {% if is_main_product %}
+    <button class="wishlist-button" data-index="{{ product['index'] }}" style="outline: none; box-shadow: none;">
+        <!-- Adding the icon inline here, since didn't find a way to alter the color otherwise.  -->
+        <svg version="1.1" width="36" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 496.158 496.158"
+            style="enable-background:new 0 0 496.158 496.158;" xml:space="preserve">
+            <!-- outer circle. -->
+            <path style="fill:none; stroke:black; stroke-width:10;" d="M0,248.085C0,111.063,111.069,0.003,248.075,0.003c137.013,0,248.083,111.061,248.083,248.082
+       c0,137.002-111.07,248.07-248.083,248.07C111.069,496.155,0,385.087,0,248.085z" />
+            <!-- inner heart. -->
+            <path class="heart-icon {% if is_wishlisted %}wishlisted{%endif%}" style="stroke:black; stroke-width:10;" d="M374.116,155.145c-34.799-34.8-91.223-34.8-126.022,0h-0.029c-34.801-34.8-91.224-34.8-126.023,0
+       c-34.801,34.8-29.783,86.842,0,126.022c31.541,41.491,89.129,109.944,126.023,109.944h0.029c36.895,0,94.481-68.453,126.022-109.944
+       C403.9,241.988,408.916,189.946,374.116,155.145z" />
         </svg>
     </button>
+
+    <button class="btn pl-1 pr-0 pt-0 pb-1 product-share-button"
+        onclick="navigatorShare('I found this dress on Husn! Look at the the similar dresses as well!')"
+        style="outline: none; box-shadow: none;">
+        <img src="/static/insta-style-share.svg" height="32" alt="Share">
+    </button>
+
+    </button>
+
     {% endif %}
     <div class="card-body px-1 pt-1" style="background-color:transparent !important;">
         <!-- Product Brand and name -->
@@ -101,7 +117,7 @@
     </div>
 </div>
 
-{% if is_main_product and current_user.is_authenticated %}
+{% if is_main_product%}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var wishlistButtons = document.querySelectorAll('.wishlist-button');
@@ -111,6 +127,7 @@
                 var index = this.dataset.index;
                 var heartIcon = this.querySelector('.heart-icon');
 
+                {% if current_user.is_authenticated %}
                 // Send POST request to toggle wishlist status
                 fetch('/wishlist/' + index, {
                     method: 'POST',
@@ -134,6 +151,9 @@
                     .catch(error => {
                         console.error('Error:', error);
                     });
+                {% else %}
+                window.location.href = '/login?next={{ url_for(request.endpoint, **request.view_args) }}';
+                {% endif %}
             });
         });
     });
