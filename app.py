@@ -288,7 +288,10 @@ def logout():
     logout_user()
     session.pop('access_token', None)
     session.pop('expires_at', None)
-    return redirect(request.referrer or '/')
+    referrer = '/'
+    if request.referrer and not url_for('authorize', _external=True) in request.referrer:
+        referrer = request.referrer
+    return redirect(referrer)
 
 # Example protected route
 @app.route('/profile')
