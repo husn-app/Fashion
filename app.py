@@ -235,11 +235,19 @@ def check_and_refresh_token():
             return False
     return True
 
+@app.before_request
+def check_token_for_authenticated_user():
+    if current_user.is_authenticated:
+        if not check_and_refresh_token():
+            logout_user()
+            return redirect(url_for('login'))
+        
 # Route for login
 @app.route('/login')
 def login():
     if current_user.is_authenticated:
         return redirect('/')
+    session['next_url'] = request.referrer or '/'
     redirect_uri = url_for('authorize', _external=True)
     return google.authorize_redirect(redirect_uri, access_type="offline") # needed for refresh token
 
@@ -280,7 +288,7 @@ def logout():
     logout_user()
     session.pop('access_token', None)
     session.pop('expires_at', None)
-    return redirect('/')
+    return redirect(request.referrer or '/')
 
 # Example protected route
 @app.route('/profile')
@@ -313,7 +321,7 @@ def toggle_wishlist_product(index):
 @login_required
 def wishlist():
     wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=current_user.id).all()
-    wishlisted_indices = [index[0] for index in wishlisted_products]
+    wishlisted_indices = [index[0] for index in wishlisted_products if index[0] < len(final_df)]
     products = final_df.iloc[wishlisted_indices].to_dict('records')
     return render_template('wishlist.html', products=products)
 
