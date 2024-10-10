@@ -1,12 +1,12 @@
 <style>
     input:focus {
         outline-color: #C4BEB5 !important;
-        box-shadow:  0 0 0 0.2rem #C4BEB5 !important;  /* This is for Bootstrap's glow effect */ 
+        box-shadow: 0 0 0 0.2rem #C4BEB5 !important;
+        /* This is for Bootstrap's glow effect */
         border-color: #C4BEB5 !important;
-    }  
-
+    }
 </style>
-<div class="col-12">
+<div class="col-12 px-2">
     <script>
         function submitForm(event) {
             event.preventDefault();
@@ -16,15 +16,19 @@
                 return;
             }
             trackSearch(query)
-            query = query.replace(/\s+/g, '-'); 
+            query = query.replace(/\s+/g, '-');
             window.location.href = '/query/' + encodeURIComponent(query);
         }
     </script>
-    <form onsubmit="submitForm(event);">
-        <div class="form-group">
+    <div class="d-flex mb-3">
+        <form onsubmit="submitForm(event);" class="flex-grow-1">
             <input type="text" id="query" class="form-control" name="query" value="{{ query | default('') }}"
-                placeholder="Search..."
-                style="border-radius: 25px; height: 50px; padding: 10px 10px 10px 20px;">
-        </div>
-    </form>
+                placeholder="Search..." style="border-radius: 25px; height: 50px; padding: 10px 10px 10px 20px;">
+        </form>
+        {% if is_query_page %}
+        <button class="btn pl-1 pr-0 pt-0 pb-1" onclick="navigatorShare('I found these results on Husn')" style="outline: none; box-shadow: none;">
+            <img src="/static/share-icon.svg" height="36" alt="Share">
+        </button>
+        {% endif %}
+    </div>
 </div>
