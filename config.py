@@ -15,3 +15,8 @@ class Config(object):
         SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
         
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # Geed feed defaults.
+    FEED_MINIMUM_CLICKS = os.environ.get('FEED_MINIMUM_CLICKS', 5)
+    FEED_NUM_PRODUCTS = os.environ.get('FEED_NUM_PRODUCTS', 256)
+    FEED_CLICK_SAMPLE = os.environ.get('FEED_CLICK_SAMPLE', 32)

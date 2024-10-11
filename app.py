@@ -10,10 +10,11 @@ from authlib.integrations.flask_client import OAuth
 import requests
 from config import Config
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
-from models import User, WishlistItem
+from models import User, WishlistItem, UserClick
 from db import db
 from flask_migrate import Migrate
 import os
+import random
 
 app = Flask(__name__)
 app.config.from_object(Config)  
@@ -22,11 +23,6 @@ migrate = Migrate(app, db)
 print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}")
 
 torch.set_grad_enabled(False)
-model, preprocess, tokenizer = None, None, None
-final_df = None
-image_embeddings = None
-faiss_index = None
-similar_products_cache = None
 
 def init_model():
     global model, preprocess, tokenizer
@@ -110,9 +106,37 @@ google = oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
 )
 
+
+def get_feed():
+    global final_df
+    
+    # Get clicked products.
+    clicks = UserClick.query.with_entities(UserClick.product_index, UserClick.clicked_at) \
+        .filter_by(user_id=current_user.id) \
+            .order_by(UserClick.clicked_at.desc()) \
+                .distinct() \
+                    .limit(app.config['FEED_CLICK_SAMPLE']) \
+                        .all()
+    clicked_products = [click.product_index for click in clicks]
+    
+    # Don't return results if user hasn't made some clicks yet.
+    if len(clicked_products) < app.config['FEED_MINIMUM_CLICKS']:
+        return []
+    
+    # sample feed porducts. 
+    feed_products_indexes = list(set(similar_products_cache[clicked_products].view(-1).detach().tolist()))
+    sampled_feed_indexes = random.sample(feed_products_indexes,
+                                         min(app.config['FEED_NUM_PRODUCTS'], len(feed_products_indexes)))
+    
+    return final_df.iloc[sampled_feed_indexes]
+
 @app.route('/')
 def home():
-    return render_template('landingpage.html')
+    feed_products = []
+    if current_user.is_authenticated:
+        feed_products = get_feed()
+        feed_products = feed_products.to_dict('records')
+    return render_template('landingpage.html', feed_products=feed_products)
 
 # DEPRECATED : Use faiss_index.search instead. 
 def getTopK(base_embedding, K=100):
@@ -191,9 +215,15 @@ def web_product(slug, index):
         return redirect('/')
     is_wishlisted=False
     if current_user.is_authenticated:
+        # check wishlist.
         wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_index=index).first()
         if wishlist_item:
             is_wishlisted = True
+            
+        user_click = UserClick(user_id=current_user.id, product_index=index)
+        db.session.add(user_click)
+        # TODO: Make this asynchronous. We don't care if we lose some of the clicks. 
+        db.session.commit()
     return render_template('product.html', **result, is_wishlisted=is_wishlisted)
 
 @app.route('/api/product/<index>')

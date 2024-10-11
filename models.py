@@ -19,3 +19,9 @@ class WishlistItem(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     product_index = db.Column(db.Integer, index=True)
     created_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    
+class UserClick(db.Model):
+    id = db.Column(db.Integer, primary_key=True) # Add a primary key
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    product_index = db.Column(db.Integer)
+    clicked_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
