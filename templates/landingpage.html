@@ -12,6 +12,7 @@
     }
 </style>
 
+{% if feed_products.empty %}
 <div class="d-flex justify-content-center align-items-center" style="height:90vh;">
     <div class="container">
         <div class="row justify-content-center align-items-center">
@@ -36,4 +37,17 @@
         </div> 
     </div>
 </div>
+{% else %}
+
+<div class="row mb-2 mt-2 px-0">
+{% include "search-bar.html"%}
+</div>
+
+{% with products = feed_products %}
+    {% include 'products-list.html' %}
+{% endwith %}
+{% endif %}
+</div>
+
+
 {% endblock %}
