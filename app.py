@@ -277,6 +277,9 @@ def login():
         return redirect('/')
     session['next_url'] = request.referrer or '/'
     redirect_uri = url_for('authorize', _external=True)
+    if 'http://' in redirect_uri and '127.0.0.1' not in redirect_uri:
+        redirect_uri = redirect_uri.replace('http://', 'https://')
+    print(f"{redirect_uri=}")
     return google.authorize_redirect(redirect_uri, access_type="offline") # needed for refresh token
 
 # Route for authorization callback
@@ -288,7 +291,6 @@ def authorize():
         token = google.authorize_access_token()
         resp = google.get('userinfo')
         user_info = resp.json()
-        print(f"{token=}\n{resp=}\n{user_info=}")
         user = User.query.filter_by(email=user_info['email']).first()
         if not user:
             user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
