@@ -5,7 +5,6 @@ import time
 import torch
 import torch.nn.functional as F
 import faiss
-import json
 from authlib.integrations.flask_client import OAuth
 import requests
 from config import Config
@@ -13,7 +12,6 @@ from flask_login import LoginManager, login_user, current_user, login_required, 
 from models import User, WishlistItem, UserClick
 from db import db
 from flask_migrate import Migrate
-import os
 import random
 
 app = Flask(__name__)
@@ -99,11 +97,12 @@ google = oauth.register(
     name='google',
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     client_kwargs={
-        'scope': 'openid email profile',
+        'scope': 'openid email profile', # https://www.googleapis.com/auth/user.birthday.read https://www.googleapis.com/auth/user.gender.read',
         'access_type': 'offline',   # to get refresh token
-        'prompt': 'consent',        # to ensure refresh token is received
+        # 'prompt': 'consent',        # to ensure refresh token is received
     },
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    include_granted_scopes=True
 )
 
 
@@ -128,14 +127,13 @@ def get_feed():
     sampled_feed_indexes = random.sample(feed_products_indexes,
                                          min(app.config['FEED_NUM_PRODUCTS'], len(feed_products_indexes)))
     
-    return final_df.iloc[sampled_feed_indexes]
+    return final_df.iloc[sampled_feed_indexes].to_dict('records')
 
 @app.route('/')
 def home():
     feed_products = []
     if current_user.is_authenticated:
         feed_products = get_feed()
-        feed_products = feed_products.to_dict('records')
     return render_template('landingpage.html', feed_products=feed_products)
 
 # DEPRECATED : Use faiss_index.search instead. 
@@ -290,7 +288,7 @@ def authorize():
         token = google.authorize_access_token()
         resp = google.get('userinfo')
         user_info = resp.json()
-
+        print(f"{token=}\n{resp=}\n{user_info=}")
         user = User.query.filter_by(email=user_info['email']).first()
         if not user:
             user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
@@ -309,8 +307,7 @@ def authorize():
         print(f"Couldn't login user:{ex}")
 
     next_url = session.pop('next_url', '/')
-    response = make_response(redirect(next_url))
-    return response
+    return redirect(next_url)
 
 # Route for logout
 @app.route('/logout')
@@ -319,18 +316,10 @@ def logout():
     session.pop('access_token', None)
     session.pop('expires_at', None)
     referrer = '/'
-    if request.referrer and not url_for('authorize', _external=True) in request.referrer and not url_for('wishlist') in request.referrer:
+    if request.referrer and not url_for('wishlist') in request.referrer:
         referrer = request.referrer
     return redirect(referrer)
 
-# Example protected route
-@app.route('/profile')
-@login_required
-def profile():
-    if check_and_refresh_token():
-        return render_template('profile.html', user=current_user)
-    session['next_url'] = request.url
-    return redirect('/')
 
 @app.route('/wishlist/<int:index>', methods=['POST'])
 @login_required
