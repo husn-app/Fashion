@@ -2,7 +2,7 @@
     {% for i in range(products|length) %}
     <div class="col mb-4 px-2">
         {% with product=products[i] %}
-        {% include 'product-view.html' %}
+        {% include 'product-secondary-view.html' %}
         {% endwith %}
     </div>
     {% endfor %}

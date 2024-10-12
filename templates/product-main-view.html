@@ -1,0 +1,45 @@
+<div class="card h-100" style="border: 0 !important; background-color:transparent;">
+    <!-- Product Image  -->
+    {% set primary_image = product['primary_image'] %}
+    {% set slug = product['product_url'].split('/')[-3] %}
+    <a href="/product/{{slug}}/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
+            style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}" alt="{{ product['title'] }}"></a>
+
+
+    <div class="card-body px-1 pt-1" style="background-color:transparent !important;">
+        <div class="d-flex mt-2">
+            <button class="wishlist-button w-[32px] h-[32px] mr-2"
+                onclick="toggleWishlist(event, '{{ product.index}}');" style="outline: none; box-shadow: none;">
+                {% include 'svg/wishlist-icon.html' %}
+            </button>
+
+            <button class="btn p-0 product-share-button w-[32px] h-[32px] mr-2"
+                onclick="navigatorShare('I found this dress on Husn! Look at the the similar dresses as well!')"
+                style="outline: none; box-shadow: none;">
+                <img src="/static/insta-style-share.svg" alt="Share">
+            </button>
+
+            <!-- Product Original Url -->
+            <a class="p-0 w-[42px] h-[32px]" href="{{ product['product_url'] }}">
+                <img src="/static/myntra-logo.svg" alt="View Product on Myntra">
+            </a>
+
+            <span class="ml-auto text-black">Rs. {{
+                product['price'] | int}}
+            </span>
+        </div>
+        <!-- Product Brand and name -->
+        {% set product_name = product['product_name'].replace(product['brand'], '')
+        %}
+        <div class="d-flex">
+            <span class="mt-1 text-sm mb-0 text-gray-800">{{ product['brand'] }}</span>
+            {% if product['rating_count'] > 0 %}
+            <div class="ml-auto text-sm border-2 rounded-lg px-2" style="border-color: #c8bea1">
+                {{ '%.1f'|format(product['rating']) }} <span style="color:#68827f">&#9733;</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="mb-0 text-xs text-gray-600">{{ product_name }}</div>
+    </div>
+
+</div>

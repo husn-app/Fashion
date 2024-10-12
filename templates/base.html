@@ -28,7 +28,7 @@
         }
 
         // JavaScript code to track a product click
-        function trackProductClick(productId) {
+        function trackProductClick(productIndex) {
             gtag('event', 'productClick', {
                 'productId': productIndex
             });
@@ -79,6 +79,40 @@
                     alert('Sharing is not supported in your browser. Please share the URL!')
                 });
             }
+        }
+
+        function toggleWishlist(event, index) {
+            event.preventDefault();
+            var index = index;
+            var heartIcon = event.currentTarget.querySelector('.heart-icon');
+
+            {% if current_user.is_authenticated %}
+            // Send POST request to toggle wishlist status
+            fetch('/wishlist/' + index, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_wishlisted) {
+                        // When the product is added to the wishlist
+                        console.log('Added to wishlist');
+                        heartIcon.classList.add('wishlisted');  // Ensure the class is added to fill the heart
+                    } else {
+                        // When the product is removed from the wishlist
+                        console.log('Removed from wishlist');
+                        heartIcon.classList.remove('wishlisted');  // Ensure the class is removed to unfill the heart
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            {% else %}
+            window.location.href = '/login?next={{ url_for(request.endpoint, **request.view_args) }}';
+            {% endif %}
         }
     </script>
 </head>

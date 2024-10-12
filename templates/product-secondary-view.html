@@ -1,0 +1,16 @@
+<div class="card h-100" style="border: 0 !important; background-color:transparent;">
+    <!-- Product Image  -->
+    {% set primary_image = product['primary_image'].replace('/assets/', '/f_webp,q_60/w_480/v1/assets/') %}
+    {% set slug = product['product_url'].split('/')[-3] %}
+    <a href="/product/{{slug}}/{{ product.index }}" onclick="trackProductClick('{{ product.index}}'); return true;"><img
+            style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}" alt="{{ product['title'] }}"></a>
+
+
+    <div class="card-body px-1 pt-1" style="background-color:transparent !important;">
+        <!-- Product Brand and name -->
+        {% set product_name = product['product_name'].replace(product['brand'], '')
+        %}
+        <span class="mt-1 text-sm mb-0 text-gray-800">{{ product['brand'] }}</span>
+        <div class="mb-0 text-xs text-gray-600">{{ product_name }}</div>
+    </div>
+</div>

@@ -1,4 +1,4 @@
-{% set title = 'Home' %} 
+{% set title = 'Home' %}
 
 {% extends "base.html" %}
 
@@ -7,10 +7,10 @@
 <style>
     .suggested-search {
         text-decoration: underline !important;
-        color : #000000;
+        color: #000000;
         font-family: Arial, sans-serif;
-        border :10px lightpink;
-        margin-bottom : 10px;
+        border: 10px lightpink;
+        margin-bottom: 10px;
     }
 </style>
 
@@ -20,35 +20,43 @@
         <div class="row justify-content-center align-items-center">
             {% include "search-bar.html" %}
         </div>
-        <div class="row justify-content-center col-12 align-items-center mt-0 p-0" style = "padding: 10px 10px 10px 20px">
+        <div class="row justify-content-center col-12 align-items-center mt-0 p-0" style="padding: 10px 10px 10px 20px">
             <div id="trending-searches" class="mt-0">
                 <!-- Trending searches will be populated here -->
-                <div >
-                    <a class= "text-sm suggested-search" href="/query/christmas-dinner-dress">Christmas Dinner Dress</a>
+                <div>
+                    <a class="text-sm suggested-search" href="/query/christmas-dinner-dress">Christmas Dinner Dress</a>
                 </div>
                 <div>
-                    <a class = "text-sm suggested-search" href="/query/sexy-red-corset">Red Corset</a>
+                    <a class="text-sm suggested-search" href="/query/sexy-red-corset">Red Corset</a>
                 </div>
                 <div>
-                    <a class = "text-sm suggested-search" href="/query/parachute-jeans-with-pleats">Parachute jeans with Pleats</a>
+                    <a class="text-sm suggested-search" href="/query/parachute-jeans-with-pleats">Parachute jeans with
+                        Pleats</a>
                 </div>
                 <div>
-                    <a class = "text-sm suggested-search" href="/query/jumpsuit-for-diwali">Jumpsuit for diwali</a>
+                    <a class="text-sm suggested-search" href="/query/jumpsuit-for-diwali">Jumpsuit for diwali</a>
                 </div>
             </div>
-        </div> 
+        </div>
     </div>
 </div>
 {% else %}
 
 <div class="row mb-2 mt-2 px-0">
-{% include "search-bar.html"%}
+    {% include "search-bar.html"%}
 </div>
 
-{% with products = feed_products %}
-    {% include 'products-list.html' %}
+
+{% for i in range(feed_products|length) %}
+    {% with product=feed_products[i] %}
+        {% include 'product-main-view.html' %}
+    {% endwith %}
+{% endfor %}
+
+<!-- {% with products = feed_products %}
+{% include 'products-list.html' %}
 {% endwith %}
-{% endif %}
+{% endif %} -->
 </div>
 
 

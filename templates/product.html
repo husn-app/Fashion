@@ -13,48 +13,10 @@
     {% endwith %}
 </div>
 
-{% with product=current_product, is_main_product=True %}
-{% include 'product-view.html' %}
+{% with product=current_product %}
+{% include 'product-main-view.html' %}
 {% endwith %}
 
 
 {% include 'products-list.html' %}
 {% endblock %}
-
-<!-- See product-view for wishlist related code.-->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var wishlistButtons = document.querySelectorAll('.wishlist-button');
-        wishlistButtons.forEach(function (button) {
-            button.addEventListener('click', function (event) {
-                event.preventDefault();
-                var index = this.dataset.index;
-                var heartIcon = this.querySelector('.heart-icon');
-
-                // Send POST request to toggle wishlist status
-                fetch('/wishlist/' + index, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({})
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.is_wishlisted) {
-                            // When the product is added to the wishlist
-                            console.log('Added to wishlist');
-                            heartIcon.classList.add('wishlisted');  // Ensure the class is added to fill the heart
-                        } else {
-                            // When the product is removed from the wishlist
-                            console.log('Removed from wishlist');
-                            heartIcon.classList.remove('wishlisted');  // Ensure the class is removed to unfill the heart
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-            });
-        });
-    });
-</script>
