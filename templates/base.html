@@ -5,9 +5,12 @@
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-WNRNCBVSKY"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
 
     {% block seo %}
     {% endblock %}
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
 
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -59,45 +62,6 @@
             /* Hides the default arrow */
         }
     </style>
-</head>
-
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand" href="/"
-            style="font-family: 'Times New Roman', Times, serif; color:black; font-size:xx-large;">Husn</a>
-
-        <!-- Right-aligned button area -->
-        <div class="ml-auto">
-            {% if current_user.is_authenticated %}
-            <!-- User is logged in, display profile picture with a dropdown -->
-            <div class="dropdown">
-                <a class="nav-link custom-dropdown-toggle" href="#" id="profileMenu" role="button"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="padding: 0;">
-                    <img src="{{ current_user.picture_url }}" alt="Profile" class="rounded-circle" width="40"
-                        height="40" style="border-radius: 50%;">
-                </a>
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profileMenu">
-                    <a class="dropdown-item" href="{{ url_for('wishlist') }}">Wishlist</a>
-                    <a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a>
-                </div>
-            </div>
-
-            {% else %}
-            <!-- User is not logged in, display Google Sign-In button -->
-            <a id="sign-in-button" class="bf b io ip bk th gd ff ti fl tj ev fa tk tl tm tn to fb fc fd bm fe"
-                href="/login" rel="noopener follow" style="text-decoration: none;">
-                <div class="ab q cp" style="font-size: 16px;">
-                    <img src="/static/google-signin.svg" alt="Google Sign-In Button">
-                    <span style="color: black;">Sign in</span>
-                </div>
-            </a>
-            {% endif %}
-        </div>
-    </nav>
-    <div class="container">
-        {% block content %}
-        {% endblock %}
-    </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
     <script>
@@ -117,6 +81,18 @@
             }
         }
     </script>
+</head>
+
+<body>
+    {% include 'navbar-top.html' %}
+    <div class="container">
+        <div>
+            {% block content %}
+            {% endblock %}
+        </div>
+
+        {% include 'navbar-bottom.html' %}
+    </div>
 </body>
 
 <style>
