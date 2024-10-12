@@ -1,0 +1,55 @@
+<style>
+    .active-bottom-icon {}
+
+    .active-bottom-icon svg {
+        fill: #c8bea1
+    }
+
+    .active-bottom-icon span {
+        color: black;
+    }
+</style>
+
+<style> console.log({{ title }})</style>
+<div class="fixed bottom-0 left-0 w-full h-16"
+    style="border-color:#c8bea1; background-color:#dedacf; border-radius: 12px; border-top-width: 1px;">
+    <div class="grid h-full max-w-lg grid-cols-3 mx-auto">
+        <a href="/" class="inline-flex flex-col items-center justify-center group {% if title == 'Home' %}active-bottom-icon{% endif %}"
+            style="border-top-left-radius:12px; text-decoration:none;">
+            <!-- home icon -->
+            <svg class="w-6 h-6 mb-1" viewBox="-0.5 -0.5 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M7.8254 0.120372C7.63815 -0.0401239 7.36185 -0.0401239 7.1746 0.120372L0 6.27003V13.5C0 14.3284 0.671573 15 1.5 15H5.5C5.77614 15 6 14.7761 6 14.5V11.5C6 10.6716 6.67157 10 7.5 10C8.32843 10 9 10.6716 9 11.5V14.5C9 14.7761 9.22386 15 9.5 15H13.5C14.3284 15 15 14.3284 15 13.5V6.27003L7.8254 0.120372Z"
+                    stroke="black" stroke-width="1" />
+            </svg>
+            <!-- home icon -->
+
+            <span class="text-sm text-gray-500">Home</span>
+        </a>
+        <a href="/inspiration"
+            class="inline-flex flex-col items-center justify-center group {% if title == 'Inspiration' %}active-bottom-icon{% endif %}"
+            style="border-top-left-radius:12px; text-decoration:none;">
+            <!-- bulb icon. -->
+            <svg class="w-6 h-6 mb-1" fill="black" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M511.984 0c-198.032 0-353.12 161.104-353.12 359.136 0 149.2 73.28 220.256 131.185 272.128 37.28 33.424 62.368 53.552 62.368 78.352v54.255c0 1.392.193 2.752.368 4.128h-.72v92.624c.016 97.712 63.2 163.376 161.072 163.376 94.464 0 158.944-65.664 158.944-163.376V768h-.928c.176-1.376.416-2.736.416-4.128v-54.255c0-37.76 28.032-60.592 70.528-97.696 57.504-50.208 123.023-112.688 123.023-252.784C865.136 161.104 710.016 0 511.983 0zm-1.215 960c-59.904 0-94.689-37.152-94.689-99.376l-.463-42.672C438.64 825.824 470 832 512 832c41.424 0 72.848-6.624 96.08-14.768v43.392c0 63.152-35.247 99.376-97.312 99.376zm189.248-396.288c-43.472 37.968-92.433 77.216-92.433 145.904v40.432c-15.183 8.48-43.183 18.56-96.127 18.56-55.569 0-81.92-9.856-95.024-17.473V709.6c0-54.608-42.688-89.297-83.68-126.017-54.32-48.672-109.873-103.84-109.873-224.464-.015-162.72 126.385-295.12 289.104-295.12 162.752 0 289.152 132.4 289.152 295.137 0 111.024-48.463 158.576-101.12 204.576z" />
+            </svg>
+            <!-- bulb icon. -->
+
+            <span class="text-sm text-gray-500">Inspiration</span>
+        </a>
+        <a href="/wishlist"
+            class="inline-flex flex-col items-center justify-center group {% if title == 'Wishlist' %}active-bottom-icon{% endif %}"
+            style="border-top-left-radius:12px; text-decoration:none;">
+            <!-- heart icon.  -->
+            <svg class="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M20.42 4.58a5.4 5.4 0 00-7.65 0l-.77.78-.77-.78a5.4 5.4 0 00-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z" />
+            </svg>
+            <!-- heart icon.  -->
+
+            <span class="text-sm text-gray-500">Wishlist</span>
+        </a>
+    </div>
+</div>
