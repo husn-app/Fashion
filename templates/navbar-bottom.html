@@ -8,9 +8,21 @@
     .active-bottom-icon span {
         color: black;
     }
+    {% if title not in ('Feed', 'Inspiration', 'Wishlist') %}
+        .bottom-nav-text {
+            display: none;
+        }
+        .bottom-nav-bar {
+            height : 2.5rem;
+        }
+    {% else %}
+        .bottom-nav-bar {
+            height : 4rem;
+        }
+    {% endif %}
 </style>
 
-<div class="fixed bottom-0 left-0 w-full h-16"
+<div class="fixed bottom-0 left-0 w-full bottom-nav-bar"
     style="border-color:#c8bea1; background-color:#dedacf; border-radius: 12px; border-top-width: 1px;">
     <div class="grid h-full max-w-lg grid-cols-3 mx-auto">
         <a href="/feed"
@@ -24,7 +36,7 @@
             </svg>
             <!-- home icon -->
 
-            <span class="text-sm text-gray-500">Home</span>
+            <span class="text-sm text-gray-500 bottom-nav-text">Home</span>
         </a>
         <a href="/inspiration"
             class="inline-flex flex-col items-center justify-center group {% if title == 'Inspiration' %}active-bottom-icon{% endif %}"
@@ -36,7 +48,7 @@
             </svg>
             <!-- bulb icon. -->
 
-            <span class="text-sm text-gray-500">Inspiration</span>
+            <span class="text-sm text-gray-500 bottom-nav-text">Inspiration</span>
         </a>
         <a href="/wishlist"
             class="inline-flex flex-col items-center justify-center group {% if title == 'Wishlist' %}active-bottom-icon{% endif %}"
@@ -48,8 +60,8 @@
                     d="M20.42 4.58a5.4 5.4 0 00-7.65 0l-.77.78-.77-.78a5.4 5.4 0 00-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z" />
             </svg>
             <!-- heart icon.  -->
-
-            <span class="text-sm text-gray-500">Wishlist</span>
+            
+            <span class="text-sm text-gray-500 bottom-nav-text">Wishlist</span>
         </a>
     </div>
 </div>
