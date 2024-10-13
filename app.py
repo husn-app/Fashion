@@ -138,9 +138,8 @@ def get_feed():
     return final_df.iloc[sampled_feed_indexes].to_dict('records')
 
 @app.route('/feed')
+@login_required
 def feed_route():
-    if not current_user.is_authenticated:
-        return redirect('/login')
     feed_products = get_feed()
     return render_template('landingpage.html', feed_products=feed_products)
     
