@@ -14,29 +14,19 @@
     }
 </style>
 
-{% if feed_products.empty %}
+{% if not feed_products %}
 <div class="d-flex justify-content-center align-items-center" style="height:90vh;">
     <div class="container">
         <div class="row justify-content-center align-items-center">
             {% include "search-bar.html" %}
         </div>
-        <div class="row justify-content-center col-12 align-items-center mt-0 p-0" style="padding: 10px 10px 10px 20px">
-            <div id="trending-searches" class="mt-0">
-                <!-- Trending searches will be populated here -->
-                <div>
-                    <a class="text-sm suggested-search" href="/query/christmas-dinner-dress">Christmas Dinner Dress</a>
-                </div>
-                <div>
-                    <a class="text-sm suggested-search" href="/query/sexy-red-corset">Red Corset</a>
-                </div>
-                <div>
-                    <a class="text-sm suggested-search" href="/query/parachute-jeans-with-pleats">Parachute jeans with
-                        Pleats</a>
-                </div>
-                <div>
-                    <a class="text-sm suggested-search" href="/query/jumpsuit-for-diwali">Jumpsuit for diwali</a>
-                </div>
-            </div>
+        <div class="mx-2 row justify-content-center col-12 align-items-center mt-0 p-0">
+                <span class = "text-md block font-serif">
+                    Search for your favourite outfits or checkout the Inspirations tab!
+                </span>
+                <span class = "mt-2 text-md block font-serif">
+                    Check back here in some time to see your personalized feed. 
+                </span>
         </div>
     </div>
 </div>

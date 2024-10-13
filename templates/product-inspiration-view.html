@@ -1,0 +1,13 @@
+<div class="card h-100" style="border: 0 !important; background-color:transparent;">
+    <!-- Product Image  -->
+    {% set primary_image = product['primary_image'].replace('/assets/', '/f_webp,q_80/w_560/v1/assets/') %}
+    {% set slug = product['product_url'].split('/')[-3] %}
+    <a href="/query/{{ product.inspiration_subcategory.query }}"
+        onclick="trackInspiration('{{ product.index }}', '{{ product.inspiration_subcategory.query}}'); return true;"><img
+            style="border-radius:15px;" class="card-img-top" src="{{ primary_image }}" alt="{{ product['title'] }}"></a>
+
+
+    <div class="card-body px-1 pt-1 pb-0" style="background-color:transparent !important;">
+        <span class="mt-1 text-lg mb-0 text-gray-800 font-serif block text-center">{{ product.inspiration_subcategory.name }}</span>
+    </div>
+</div>
