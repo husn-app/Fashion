@@ -1,0 +1,94 @@
+{% set title = 'Onboarding' %}
+
+{% extends "base.html" %}
+
+
+{% block content %}
+
+<style>
+    .hidden:checked+.gender-option {
+        border-color: black;
+    }
+
+    .gender-option img {
+        display: block;
+        margin: 0 auto;
+    }
+
+    .gender-option span {
+        display: block;
+        text-align: center;
+    }
+
+    #age-slider {
+        -webkit-appearance: none;
+        background: gray;
+        outline: none;
+    }
+
+    #age-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        background: #c8bea1;
+        cursor: pointer;
+    }
+</style>
+
+<span class = "block font-serif text-3xl mt-8 mb-2">Help us know you better!</span>
+<hr> 
+<form action="" method="POST" onsubmit="submitOnboarding(event)">
+    <div class="gender-div mt-8 mb-16">
+        <span class="text-2xl font-serif ml-2 mb-4 block"> What's your gender?</span>
+        <div class="flex justify-content-between mx-3">
+            <input id="gender-man" type="radio" name="gender" value="MAN" class="hidden" required>
+            <label for="gender-man"
+                class="gender-option rounded-full border-2 px-[36px] py-1 border-gray-400 cursor-pointer">
+                <img src="/static/boy.png" class="ml-auto" alt="Men Shoes" width="60" height="60">
+                <span class="text-xl font-serif"> Man </span>
+            </label>
+            <input id="gender-woman" type="radio" name="gender" value="WOMAN" class="hidden" required>
+            <label for="gender-woman"
+                class="gender-option rounded-full border-2 px-[24px] py-1 border-gray-400 cursor-pointer">
+                <img src="/static/girl.png" alt="Women Shoes" width="60" height="60">
+                <span class="text-xl font-serif"> Woman </span>
+            </label>
+        </div>
+    </div>
+
+
+
+    <!-- Age -->
+    <div class="age-div my-16">
+        <label for="age-input" class="block font-serif text-2xl ml-2">What's your age?</label>
+        <div class="flex ml-2">
+            <input type="number" id="age-input" name="age" class="block text-sm w-12 rounded-lg" placeholder="24"
+                value="24" style="" min="12" max="72" required />
+
+
+            <div class="w-full ml-2 mt-1">
+                <input id="age-slider" type="range" value="24" min="12" max="72"
+                    class="w-full h-2 rounded-lg cursor-pointer" style="">
+            </div>
+        </div>
+    </div>
+
+    <div class = "submit-button-div my-16">
+    <button class=" block p-4 rounded-xl font-serif text-xl text-center mx-auto"
+        style="background-color: #c8bea1; display: block; width: fit-content;"> Let's go!</button>
+    </div>
+</form>
+<script>
+    // Get the elements
+    var ageInput = document.getElementById('age-input');
+    var ageSlider = document.getElementById('age-slider');
+
+    ageInput.addEventListener('input', () => {
+        ageSlider.value = ageInput.value;
+    });
+
+    ageSlider.addEventListener('input', () => {
+        ageInput.value = ageSlider.value;
+    });
+</script>
+
+{% endblock %}
