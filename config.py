@@ -20,3 +20,6 @@ class Config(object):
     FEED_MINIMUM_CLICKS = os.environ.get('FEED_MINIMUM_CLICKS', 5)
     FEED_NUM_PRODUCTS = os.environ.get('FEED_NUM_PRODUCTS', 256)
     FEED_CLICK_SAMPLE = os.environ.get('FEED_CLICK_SAMPLE', 32)
+    
+    # Inspirations Path
+    INSPIRATIONS_PATH = os.environ.get('INSPIRATIONS_PATH', '')
