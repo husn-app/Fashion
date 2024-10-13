@@ -99,7 +99,7 @@ google = oauth.register(
     client_kwargs={
         'scope': 'openid email profile', # https://www.googleapis.com/auth/user.birthday.read https://www.googleapis.com/auth/user.gender.read',
         'access_type': 'offline',   # to get refresh token
-        # 'prompt': 'consent',        # to ensure refresh token is received
+        'prompt': 'consent',        # to ensure refresh token is received
     },
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     include_granted_scopes=True
@@ -289,6 +289,7 @@ def authorize():
         return redirect('/')
     try:
         token = google.authorize_access_token()
+        print(f"authorize:{token=}")
         resp = google.get('userinfo')
         user_info = resp.json()
         user = User.query.filter_by(email=user_info['email']).first()
@@ -299,7 +300,8 @@ def authorize():
             db.session.add(user)
             print(f"Created {user=}")
 
-        user.refresh_token = token.get('refresh_token')
+        if token.get('refresh_token'):
+            user.refresh_token = token.get('refresh_token')
         db.session.commit()
 
         session['access_token'] = token.get('access_token')
