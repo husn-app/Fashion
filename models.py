@@ -12,6 +12,9 @@ class User(db.Model, UserMixin):
     family_name = db.Column(db.String(255), nullable=True)  # 'family_name' field
     picture_url = db.Column(db.String(255), nullable=True)  # 'picture' field (URL to profile picture)
     refresh_token = db.Column(db.String(512), nullable=True)
+    gender = db.Column(db.Enum('MAN', 'WOMAN', name='gender_enum'), nullable=True)
+    birth_year = db.Column(db.Integer, nullable=True)
+    onboarding_stage = db.Column(db.Enum('PENDING', 'COMPLETE', name='onboarding_stage_enum'), nullable=True)
     wishlisted_products = db.relationship('WishlistItem', backref='user')
 
 class WishlistItem(db.Model):

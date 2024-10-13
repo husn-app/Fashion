@@ -13,6 +13,7 @@ from models import User, WishlistItem, UserClick
 from db import db
 from flask_migrate import Migrate
 import random
+import datetime
 
 app = Flask(__name__)
 app.config.from_object(Config)  
@@ -82,6 +83,9 @@ assert app.config['GOOGLE_CLIENT_SECRET'] is not None
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+ONBOARDING_COMPLETE = 'COMPLETE'
+MAN, WOMAN = 'MAN', 'WOMAN'
+
 @login_manager.user_loader
 def load_user(id):
     try:
@@ -131,10 +135,48 @@ def get_feed():
 
 @app.route('/')
 def home():
+    if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
+        return redirect('/onboarding')
+    
     feed_products = []
     if current_user.is_authenticated:
         feed_products = get_feed()
     return render_template('landingpage.html', feed_products=feed_products)
+
+@app.route('/onboarding', methods = ['GET', 'POST'])
+def onboarding():
+    if not current_user.is_authenticated:
+        return redirect('/login')
+    if request.method == 'GET':
+        return render_template('onboarding.html')
+    
+    if request.method == 'POST':
+        # Process form data here
+        form_data = request.form
+        gender = str(request.form.get('gender', ''))
+        age = 0
+        try:
+            age = int(request.form.get('age', 0))
+        except:
+            pass
+            
+        if gender not in (MAN, WOMAN) and (age < 12 or age > 72):
+            print('ATTENTION: Someone manually edited the onboarding form. Form data : ', request.form)
+            return redirect('/onboarding')
+        
+        try:
+            user = User.query.get(current_user.id)
+            user.gender = gender
+            user.birth_year = datetime.datetime.now().year - age
+            user.onboarding_stage = ONBOARDING_COMPLETE
+            
+            db.session.commit()
+        except Exception as e:
+            print('Error commiting onboarding data to db: ', e)
+            return redirect('/onboarding')
+        
+        # Redirect to home or another page after processing
+        return redirect('/')
 
 # DEPRECATED : Use faiss_index.search instead. 
 def getTopK(base_embedding, K=100):
