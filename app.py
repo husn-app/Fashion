@@ -138,11 +138,22 @@ def get_feed():
     return final_df.iloc[sampled_feed_indexes].to_dict('records')
 
 @app.route('/feed')
-@login_required
 def feed_route():
+    if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
+        return redirect('/onboarding')
+
+    if not current_user.is_authenticated:
+        session['login_message'] = "Login to see your personalized feed!"
+        return redirect('/login-screen')
+
     feed_products = get_feed()
-    return render_template('landingpage.html', feed_products=feed_products)
-    
+    return render_template('feed.html', feed_products=feed_products)
+
+@app.route('/login-screen')
+def login_screen():
+    login_message = session.pop('login_message', None)
+    return render_template('login_screen.html', login_message=login_message)
+
 @app.route('/')
 def home():
     if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
@@ -403,8 +414,11 @@ def toggle_wishlist_product(index):
     return jsonify({"is_wishlisted": True}), 200
 
 @app.route('/wishlist')
-@login_required
 def wishlist():
+    if not current_user.is_authenticated:
+        session['login_message'] = "Login to see your wishlist!"
+        return redirect('/login-screen')
+
     wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=current_user.id).all()
     wishlisted_indices = [index[0] for index in wishlisted_products if index[0] < len(final_df)]
     products = final_df.iloc[wishlisted_indices].to_dict('records')
