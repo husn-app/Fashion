@@ -65,7 +65,7 @@ def init_ml():
     init_faiss_index()
     similar_products_cache = torch.load(app.config['DATA_ROOT_DIR'] + 'similar_products_cache.pt')
     
-inspirations_obj = None
+inspirations_obj = {'MAN' : [], 'WOMAN' : []}
 if app.config['INSPIRATIONS_PATH']:
     inspirations_obj = json.load(open(app.config['INSPIRATIONS_PATH']))
 
@@ -139,7 +139,6 @@ def get_feed():
 
 @app.context_processor
 def inject_deployment_type():
-    print('Injecting deployment_type=', app.config['DEPLOYMENT_TYPE'])
     return dict(deployment_type=app.config['DEPLOYMENT_TYPE'])
 
 @app.route('/feed')
@@ -169,14 +168,20 @@ def home():
     
     return redirect('/feed')
 
-@app.route('/inspiration')
-def inspirations():
+@app.route('/inspiration', defaults={'gender': None})
+@app.route('/inspiration/<path:gender>')
+def inspirations(gender):
     if current_user.is_authenticated and current_user.gender in (MAN, WOMAN):
         return render_template('inspirations.html', inspirations=inspirations_obj[current_user.gender])
     
-    gender = request.args.get('gender', 'woman')
-    if gender not in ('man', 'woman'):
+    gender = gender or 'woman'
+    gender = gender.lower()
+    if gender in ('man', 'men'):
+        gender = 'man'
+    elif gender in ('woman', 'women'):
         gender = 'woman'
+    else:
+        return redirect('/inspiration')
     return render_template('inspirations.html', inspirations=inspirations_obj[gender.upper()], gender=gender)
 
 @app.route('/onboarding', methods = ['GET', 'POST'])
