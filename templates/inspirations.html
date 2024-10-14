@@ -1,0 +1,42 @@
+{% set title = 'Inspiration' %}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-2 mt-2 px-0">
+    {% with query='' %}
+    {% include "search-bar.html"%}
+    {% endwith %}
+</div>
+
+{% if gender %}
+    {% set current_gender = 'Men' if gender == 'man' else 'Women' %}
+    {% set opp_gender = 'Women' if gender == 'man' else 'Men' %}
+    {% set opp_gender_flag = 'woman' if gender == 'man' else 'man' %}
+
+    <span class="font-serif text-md">
+        This page has {{ current_gender }}'s inspirations.
+    </span>
+    <br>
+    <span class="font-serif text-md">
+        Switch to <a class = "text-blue-600 underline dark:text-blue-500 hover:no-underline" href="/inspiration?gender={{ opp_gender_flag}}" />
+        {{ opp_gender }}'s inspirations</a> or <a class = "text-blue-600 underline dark:text-blue-500 hover:no-underline" href="/login">login</a> to see personalized feed.
+    </span>
+<hr>
+{% endif %}
+
+{% for inspiration in inspirations %}
+<div class="my-3">
+    <span class="font-serif text-2xl text-center block underline mb-2">{{ inspiration.category }}</span>
+    <div class="relative w-full flex gap-6 snap-x snap-mandatory overflow-x-auto pb-14 ">
+
+        {% for product in inspiration.products %}
+        <div
+            class="snap-center w-[280px] h-[372px] shrink-0 first:ml-0 last:mr-8 transition-transform duration-300 ease-in-out transform hover:scale-105">
+            {% include 'product-inspiration-view.html' %}
+        </div>
+        {% endfor %}
+    </div>
+    <hr>
+</div>
+{% endfor %}
+{% endblock %}

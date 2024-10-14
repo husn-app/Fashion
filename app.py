@@ -14,6 +14,7 @@ from db import db
 from flask_migrate import Migrate
 import random
 import datetime
+import json
 
 app = Flask(__name__)
 app.config.from_object(Config)  
@@ -64,6 +65,9 @@ def init_ml():
     init_faiss_index()
     similar_products_cache = torch.load(app.config['DATA_ROOT_DIR'] + 'similar_products_cache.pt')
     
+inspirations_obj = None
+if app.config['INSPIRATIONS_PATH']:
+    inspirations_obj = json.load(open(app.config['INSPIRATIONS_PATH']))
 
 init_ml()
 # Assert model
@@ -133,15 +137,31 @@ def get_feed():
     
     return final_df.iloc[sampled_feed_indexes].to_dict('records')
 
+@app.route('/feed')
+@login_required
+def feed_route():
+    feed_products = get_feed()
+    return render_template('landingpage.html', feed_products=feed_products)
+    
 @app.route('/')
 def home():
     if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
         return redirect('/onboarding')
     
-    feed_products = []
-    if current_user.is_authenticated:
-        feed_products = get_feed()
-    return render_template('landingpage.html', feed_products=feed_products)
+    if not current_user.is_authenticated:
+        return redirect('/inspiration')
+    
+    return redirect('/feed')
+
+@app.route('/inspiration')
+def inspirations():
+    if current_user.is_authenticated and current_user.gender in (MAN, WOMAN):
+        return render_template('inspirations.html', inspirations=inspirations_obj[current_user.gender])
+    
+    gender = request.args.get('gender', 'woman')
+    if gender not in ('man', 'woman'):
+        gender = 'woman'
+    return render_template('inspirations.html', inspirations=inspirations_obj[gender.upper()], gender=gender)
 
 @app.route('/onboarding', methods = ['GET', 'POST'])
 def onboarding():
@@ -361,10 +381,7 @@ def logout():
     logout_user()
     session.pop('access_token', None)
     session.pop('expires_at', None)
-    referrer = '/'
-    if request.referrer and not url_for('wishlist') in request.referrer:
-        referrer = request.referrer
-    return redirect(referrer)
+    return redirect('/')
 
 
 @app.route('/wishlist/<int:index>', methods=['POST'])
