@@ -137,6 +137,11 @@ def get_feed():
     
     return final_df.iloc[sampled_feed_indexes].to_dict('records')
 
+@app.context_processor
+def inject_deployment_type():
+    print('Injecting deployment_type=', app.config['DEPLOYMENT_TYPE'])
+    return dict(deployment_type=app.config['DEPLOYMENT_TYPE'])
+
 @app.route('/feed')
 def feed_route():
     if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
