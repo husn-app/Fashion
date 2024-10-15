@@ -1,0 +1,15 @@
+{% set title = 'Login' %}
+{% set bottom_navbar_has_titles = True %}
+
+{% extends "base.html" %}
+
+
+{% block content %}
+
+<div class="flex items-center justify-center h-screen -mt-32">
+    <a class = "block" href="/login" style="outline: none;">
+        <img src="/static/google-signin-wide.svg">
+    </a>
+</div>
+
+{% endblock %}

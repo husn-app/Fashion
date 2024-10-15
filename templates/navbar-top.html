@@ -18,12 +18,8 @@
 
         {% else %}
         <!-- User is not logged in, display Google Sign-In button -->
-        <a id="sign-in-button" class="bf b io ip bk th gd ff ti fl tj ev fa tk tl tm tn to fb fc fd bm fe"
-            href="/login" rel="noopener follow" style="text-decoration: none;">
-            <div class="ab q cp" style="font-size: 16px;">
-                <img src="/static/google-signin.svg" alt="Google Sign-In Button">
-                <span style="color: black;">Sign in</span>
-            </div>
+        <a class="navbar-signing-button" href="/login" rel="noopener" style="text-decoration: none;">
+            <img src="/static/google-sign-in.svg" height="44px" width="44px" alt="Google Sign-In Button">
         </a>
         {% endif %}
     </div>

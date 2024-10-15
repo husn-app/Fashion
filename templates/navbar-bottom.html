@@ -8,7 +8,7 @@
     .active-bottom-icon span {
         color: black;
     }
-    {% if title not in ('Feed', 'Inspiration', 'Wishlist') %}
+    {% if not bottom_navbar_has_titles %}
         .bottom-nav-text {
             display: none;
         }
@@ -26,7 +26,7 @@
     style="border-color:#c8bea1; background-color:#dedacf; border-radius: 12px; border-top-width: 1px;">
     <div class="grid h-full max-w-lg grid-cols-3 mx-auto">
         <a href="/feed"
-            class="inline-flex flex-col items-center justify-center group {% if title == 'Home' %}active-bottom-icon{% endif %}"
+            class="inline-flex flex-col items-center justify-center group {% if title == 'Feed' %}active-bottom-icon{% endif %}"
             style="border-top-left-radius:12px; text-decoration:none;">
             <!-- home icon -->
             <svg class="w-6 h-6 mb-1" viewBox="-0.5 -0.5 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

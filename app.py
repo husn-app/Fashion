@@ -65,7 +65,7 @@ def init_ml():
     init_faiss_index()
     similar_products_cache = torch.load(app.config['DATA_ROOT_DIR'] + 'similar_products_cache.pt')
     
-inspirations_obj = None
+inspirations_obj = {'MAN' : [], 'WOMAN' : []}
 if app.config['INSPIRATIONS_PATH']:
     inspirations_obj = json.load(open(app.config['INSPIRATIONS_PATH']))
 
@@ -137,12 +137,27 @@ def get_feed():
     
     return final_df.iloc[sampled_feed_indexes].to_dict('records')
 
+@app.context_processor
+def inject_deployment_type():
+    return dict(deployment_type=app.config['DEPLOYMENT_TYPE'])
+
 @app.route('/feed')
-@login_required
 def feed_route():
+    if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
+        return redirect('/onboarding')
+
+    if not current_user.is_authenticated:
+        session['login_message'] = "Login to see your personalized feed!"
+        return redirect('/login-screen')
+
     feed_products = get_feed()
-    return render_template('landingpage.html', feed_products=feed_products)
-    
+    return render_template('feed.html', feed_products=feed_products)
+
+@app.route('/login-screen')
+def login_screen():
+    login_message = session.pop('login_message', None)
+    return render_template('login_screen.html', login_message=login_message)
+
 @app.route('/')
 def home():
     if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
@@ -153,14 +168,20 @@ def home():
     
     return redirect('/feed')
 
-@app.route('/inspiration')
-def inspirations():
+@app.route('/inspiration', defaults={'gender': None})
+@app.route('/inspiration/<path:gender>')
+def inspirations(gender):
     if current_user.is_authenticated and current_user.gender in (MAN, WOMAN):
         return render_template('inspirations.html', inspirations=inspirations_obj[current_user.gender])
     
-    gender = request.args.get('gender', 'woman')
-    if gender not in ('man', 'woman'):
+    gender = gender or 'woman'
+    gender = gender.lower()
+    if gender in ('man', 'men'):
+        gender = 'man'
+    elif gender in ('woman', 'women'):
         gender = 'woman'
+    else:
+        return redirect('/inspiration')
     return render_template('inspirations.html', inspirations=inspirations_obj[gender.upper()], gender=gender)
 
 @app.route('/onboarding', methods = ['GET', 'POST'])
@@ -403,8 +424,11 @@ def toggle_wishlist_product(index):
     return jsonify({"is_wishlisted": True}), 200
 
 @app.route('/wishlist')
-@login_required
 def wishlist():
+    if not current_user.is_authenticated:
+        session['login_message'] = "Login to see your wishlist!"
+        return redirect('/login-screen')
+
     wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=current_user.id).all()
     wishlisted_indices = [index[0] for index in wishlisted_products if index[0] < len(final_df)]
     products = final_df.iloc[wishlisted_indices].to_dict('records')
