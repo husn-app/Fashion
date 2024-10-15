@@ -15,6 +15,8 @@ import random
 import datetime
 import json
 import pyodbc
+import random
+
 
 # Disable pyodb pooling, to let sqlalchemy use it's own pooling.
 # Reference: https://docs.sqlalchemy.org/en/20/dialects/mssql.html#pyodbc-pooling-connection-close-behavior
@@ -121,6 +123,14 @@ google = oauth.register(
     include_granted_scopes=True
 )
 
+@app.template_filter('shuffle')
+def filter_shuffle(seq):
+    try:
+        result = list(seq)
+        random.shuffle(result)
+        return result
+    except:
+        return seq
 
 def get_feed():
     global final_df
