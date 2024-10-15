@@ -10,14 +10,22 @@ import requests
 from config import Config
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from models import User, WishlistItem, UserClick
-from db import db
 from flask_migrate import Migrate
 import random
 import datetime
 import json
+import pyodbc
+
+# Disable pyodb pooling, to let sqlalchemy use it's own pooling.
+# Reference: https://docs.sqlalchemy.org/en/20/dialects/mssql.html#pyodbc-pooling-connection-close-behavior
+pyodbc.pooling = False
+
 
 app = Flask(__name__)
 app.config.from_object(Config)  
+
+# Import db after disabling pyodbc pooling.
+from db import db
 db.init_app(app)
 migrate = Migrate(app, db)
 print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}")
