@@ -7,6 +7,7 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'Superecret'
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+    ANDROID_CLIENT_ID = os.environ.get('ANDROID_CLIENT_ID')
     REFRESH_TOKEN_URL = "https://oauth2.googleapis.com/token"
     SESSION_COOKIE_HTTPONLY = True 
     DATABASE_TYPE = os.environ.get('DATABASE_TYPE')

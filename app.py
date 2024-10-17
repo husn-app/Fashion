@@ -16,7 +16,8 @@ import datetime
 import json
 import pyodbc
 import random
-
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 # Disable pyodb pooling, to let sqlalchemy use it's own pooling.
 # Reference: https://docs.sqlalchemy.org/en/20/dialects/mssql.html#pyodbc-pooling-connection-close-behavior
@@ -93,6 +94,7 @@ assert similar_products_cache is not None
 
 assert app.config['GOOGLE_CLIENT_ID'] is not None
 assert app.config['GOOGLE_CLIENT_SECRET'] is not None
+assert app.config['ANDROID_CLIENT_ID'] is not None
 # Initialize LoginManager
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -102,6 +104,7 @@ MAN, WOMAN = 'MAN', 'WOMAN'
 
 @login_manager.user_loader
 def load_user(id):
+    print(f"load_user:{id=}")
     try:
         return User.query.get(int(id))
     except ValueError:
@@ -270,10 +273,16 @@ def web_query(query):
         return error, status_code
     return render_template('query.html', **result)
 
-@app.route('/api/query', methods=['POST'])
+@app.route('/api/query', methods=['POST', 'GET'])
 def api_query():
-    data = request.json
-    query = data.get('query')
+    print(f"android:{session.keys()=}")
+    session['ram'] = 'shaam'
+    if request.method == 'GET':
+        query = request.args.get('query')
+    elif request.method == 'POST':
+        data = request.json
+        query = data.get('query')
+    
     result, error, status_code = process_query(query)
     if error:
         return jsonify({"error": error}), status_code
@@ -327,6 +336,7 @@ def web_product(slug, index):
 
 @app.route('/api/product/<index>')
 def api_product(index):
+    # print(f"android:{session.get('ram')=}\n{request.headers=}")
     result, error, status_code = process_product(index)
     if error:
         return jsonify({"error": error}), status_code
@@ -366,7 +376,8 @@ def check_and_refresh_token():
 
 @app.before_request
 def check_token_for_authenticated_user():
-    if current_user.is_authenticated:
+    # print(f"before_request: {request.headers.get('platform')=}")
+    if not request.headers.get('platform') and current_user.is_authenticated:
         if not check_and_refresh_token():
             logout_user()
             return redirect(url_for('login'))
@@ -451,6 +462,7 @@ def wishlist():
     wishlisted_indices = [index[0] for index in wishlisted_products if index[0] < len(final_df)]
     products = final_df.iloc[wishlisted_indices].to_dict('records')
     return render_template('wishlist.html', products=products)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
