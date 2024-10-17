@@ -463,6 +463,45 @@ def wishlist():
     products = final_df.iloc[wishlisted_indices].to_dict('records')
     return render_template('wishlist.html', products=products)
 
+@app.route('/login_android', methods = ['POST'])
+def login_android():
+    idToken = request.json.get('idToken')
+    print(f"login_android:{request.headers=}\n{idToken=}")
+    try:
+        id_info = id_token.verify_oauth2_token(idToken, requests.Request(), app.config['ANDROID_CLIENT_ID'])
+        email = id_info['email']
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            user = User(
+                auth_id=id_info.get('sub'),
+                email=email,
+                name=id_info.get('name'),
+                given_name=id_info.get('given_name'),
+                family_name=id_info.get('family_name'),
+                picture_url=id_info.get('picture')
+            )
+            db.session.add(user)
+            db.session.commit()
+            print(f"Creating new android user: {user}")
+        print(f"Existing android user: {user}")
+        login_user(user)
+        return jsonify({"is_logged_in": True})
+    except ValueError as ex:
+        print(f"Token verification failed: {ex}")
+        return jsonify({'is_logged_in': False}), 400
+
+@app.route('/wishlist_android', methods=['GET'])
+@login_required
+def wishlist_android():
+    print(f"user_logged_in:{current_user.id=}\n{current_user.is_authenticated=}\n{current_user.email=}")
+    sample_products = final_df.iloc[:100].to_dict('records')
+    return jsonify({"products": sample_products})
+
+@app.route('/home_android', methods=['GET'])
+@login_required
+def home_android():
+    sample_products = final_df.iloc[:100].to_dict('records')
+    return jsonify({"products": sample_products})
 
 if __name__ == '__main__':
     app.run(debug=True)
