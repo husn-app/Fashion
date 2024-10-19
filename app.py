@@ -17,7 +17,7 @@ import json
 import pyodbc
 import random
 from google.oauth2 import id_token
-from google.auth.transport import requests
+from google.auth.transport import requests as google_api_requests
 
 # Disable pyodb pooling, to let sqlalchemy use it's own pooling.
 # Reference: https://docs.sqlalchemy.org/en/20/dialects/mssql.html#pyodbc-pooling-connection-close-behavior
@@ -340,6 +340,13 @@ def api_product(index):
     result, error, status_code = process_product(index)
     if error:
         return jsonify({"error": error}), status_code
+    is_wishlisted=False
+    if current_user.is_authenticated:
+        # check wishlist.
+        wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_index=index).first()
+        if wishlist_item:
+            is_wishlisted = True
+    result['is_wishlisted'] = is_wishlisted
     return jsonify(result)
 
 def refresh_token():
@@ -437,19 +444,20 @@ def logout():
 @app.route('/wishlist/<int:index>', methods=['POST'])
 @login_required
 def toggle_wishlist_product(index):
+    print(f"toggle_wishlist:{index}")
     # wishlist_item = WishlistItem(user_id=current_user.id, product_index=index)
     wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_index=index).first()
     if wishlist_item:
         # Item exists, so remove it from the wishlist
         db.session.delete(wishlist_item)
         db.session.commit()
-        print("Item removed from wishlist.")
+        print(f"Item {index} removed from wishlist.")
         return jsonify({"is_wishlisted": False}), 200
         # Item does not exist, so add it to the wishlist
     new_item = WishlistItem(user_id=current_user.id, product_index=index)
     db.session.add(new_item)
     db.session.commit()
-    print("Item added to wishlist.")
+    print(f"Item {index} added to wishlist.")
     return jsonify({"is_wishlisted": True}), 200
 
 @app.route('/wishlist')
@@ -468,7 +476,7 @@ def login_android():
     idToken = request.json.get('idToken')
     print(f"login_android:{request.headers=}\n{idToken=}")
     try:
-        id_info = id_token.verify_oauth2_token(idToken, requests.Request(), app.config['ANDROID_CLIENT_ID'])
+        id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), app.config['ANDROID_CLIENT_ID'])
         email = id_info['email']
         user = User.query.filter_by(email=email).first()
         if not user:
@@ -485,7 +493,7 @@ def login_android():
             print(f"Creating new android user: {user}")
         print(f"Existing android user: {user}")
         login_user(user)
-        return jsonify({"is_logged_in": True})
+        return jsonify({"is_logged_in": True, "picture_url": user.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE"})
     except ValueError as ex:
         print(f"Token verification failed: {ex}")
         return jsonify({'is_logged_in': False}), 400
@@ -502,6 +510,23 @@ def wishlist_android():
 def home_android():
     sample_products = final_df.iloc[:100].to_dict('records')
     return jsonify({"products": sample_products})
+
+@app.route('/inspirations_android', methods=['GET'])
+def inspirations_android():
+    gender = "MAN"
+    return jsonify({"inspirations": inspirations_obj, "gender": gender})
+
+import random
+@app.route('/feed_android', methods=['GET'])
+@login_required
+def feed_android():
+    val = random.randint(0, 1)
+    return jsonify({"products": get_feed() if val else []})
+
+@app.route('/onboarding_android', methods=['POST'])
+def post_onboarding():
+    print(f"onboarding:{request.json=}")
+    return jsonify({})
 
 if __name__ == '__main__':
     app.run(debug=True)
