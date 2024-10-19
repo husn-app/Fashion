@@ -1,10 +1,15 @@
+
 from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session
-import open_clip
-import pandas as pd
 import time
+
 import torch
-import torch.nn.functional as F
-import faiss
+torch.set_grad_enabled(False)
+
+import pyodbc
+# Disable pyodb pooling, to let sqlalchemy use it's own pooling.
+# Reference: https://docs.sqlalchemy.org/en/20/dialects/mssql.html#pyodbc-pooling-connection-close-behavior
+pyodbc.pooling = False
+
 from authlib.integrations.flask_client import OAuth
 import requests
 from config import Config
@@ -13,14 +18,8 @@ from models import User, WishlistItem, UserClick
 from flask_migrate import Migrate
 import random
 import datetime
-import json
-import pyodbc
+
 import random
-
-
-# Disable pyodb pooling, to let sqlalchemy use it's own pooling.
-# Reference: https://docs.sqlalchemy.org/en/20/dialects/mssql.html#pyodbc-pooling-connection-close-behavior
-pyodbc.pooling = False
 
 
 app = Flask(__name__)
@@ -32,64 +31,8 @@ db.init_app(app)
 migrate = Migrate(app, db)
 print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}")
 
-torch.set_grad_enabled(False)
+import core
 
-def init_model():
-    global model, preprocess, tokenizer
-    print('Initializing model...')
-    start_time = time.time()
-    model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k')
-    model.visual = None
-    model = torch.compile(model)
-    tokenizer = open_clip.get_tokenizer('ViT-B-32')
-    print('Initialized model.\tTime Taken: ', time.time() - start_time)
-
-
-def init_final_df():
-    global final_df
-    print('Reading products data...')
-    start_time = time.time()
-    PRODUCTS_CSV_PATH = app.config['DATA_ROOT_DIR'] + 'products_minimal.csv'
-
-    final_df = pd.read_csv(PRODUCTS_CSV_PATH)
-    print('Read products data\tTime taken: ', time.time() - start_time)
-
-def init_image_embeddings():
-    global image_embeddings
-    print('Reading image embeddings...')
-    start_time = time.time()
-    image_embeddings = F.normalize(torch.load(app.config['DATA_ROOT_DIR'] + 'image_embeddings_normalized.pt'), dim=-1).detach().numpy()
-    print('Read image embeddings.\nTime Taken: ', time.time() - start_time)
-    
-def init_faiss_index():
-    global faiss_index
-    faiss_index = faiss.IndexFlatIP(512)
-    faiss_index.add(image_embeddings) 
-
-def init_ml():
-    global similar_products_cache
-    init_final_df()
-    
-    init_model()
-    init_image_embeddings()
-    init_faiss_index()
-    similar_products_cache = torch.load(app.config['DATA_ROOT_DIR'] + 'similar_products_cache.pt')
-    
-inspirations_obj = {'MAN' : [], 'WOMAN' : []}
-if app.config['INSPIRATIONS_PATH']:
-    inspirations_obj = json.load(open(app.config['INSPIRATIONS_PATH']))
-
-init_ml()
-# Assert model
-assert model is not None
-assert preprocess is not None
-assert tokenizer is not None 
-# Assert df
-assert final_df is not None
-# Assert embeddings
-assert image_embeddings is not None
-assert faiss_index is not None
-assert similar_products_cache is not None
 
 assert app.config['GOOGLE_CLIENT_ID'] is not None
 assert app.config['GOOGLE_CLIENT_SECRET'] is not None
@@ -133,7 +76,7 @@ def filter_shuffle(seq):
         return seq
 
 def get_feed():
-    global final_df
+    global products_df
     
     # Get clicked products.
     clicks = UserClick.query.with_entities(UserClick.product_index, UserClick.clicked_at) \
@@ -153,7 +96,7 @@ def get_feed():
     sampled_feed_indexes = random.sample(feed_products_indexes,
                                          min(app.config['FEED_NUM_PRODUCTS'], len(feed_products_indexes)))
     
-    return final_df.iloc[sampled_feed_indexes].to_dict('records')
+    return products_df.iloc[sampled_feed_indexes].to_dict('records')
 
 @app.context_processor
 def inject_deployment_type():
@@ -190,17 +133,11 @@ def home():
 @app.route('/inspiration/<path:gender>')
 def inspirations(gender):
     if current_user.is_authenticated and current_user.gender in (MAN, WOMAN):
-        return render_template('inspirations.html', inspirations=inspirations_obj[current_user.gender])
-    
+        gender = current_user.gender.lower()
     gender = gender or 'woman'
-    gender = gender.lower()
-    if gender in ('man', 'men'):
-        gender = 'man'
-    elif gender in ('woman', 'women'):
-        gender = 'woman'
-    else:
+    if gender not in ('man', 'woman'):
         return redirect('/inspiration')
-    return render_template('inspirations.html', inspirations=inspirations_obj[gender.upper()], gender=gender)
+    return render_template('inspirations.html', inspirations=core.get_inspirations(gender), gender=gender)
 
 @app.route('/onboarding', methods = ['GET', 'POST'])
 def onboarding():
@@ -237,100 +174,54 @@ def onboarding():
         # Redirect to home or another page after processing
         return redirect('/')
 
-# DEPRECATED : Use faiss_index.search instead. 
-def getTopK(base_embedding, K=100):
-    global image_embeddings
-    probs = torch.nn.functional.cosine_similarity(image_embeddings, base_embedding.view(1, 512))
-    topk_indices = probs.topk(K).indices
-    return topk_indices, probs[topk_indices]
 
-def process_query(query):
-    global tokenizer, faiss_index, final_df
-    if not query:
-        return None, "Query cannot be empty", 400
-    
-    query_encoding = tokenizer(query)
-    query_embedding = F.normalize(model.encode_text(query_encoding), dim=-1) # shape = [1, DIM]
 
-    ## faiss_index.search expects batched inputs.
-    topk_scores, topk_indices = faiss_index.search(query_embedding.detach().numpy(),  100) 
-    topk_scores, topk_indices = topk_scores[0], topk_indices[0]
-
-    products = final_df.iloc[topk_indices].to_dict('records')
-    return {"query": query, "products": products, "scores": topk_scores.tolist()}, None, 200
 
 # Path captures anything that comes after /query. So any other routes like /query/some-route/<> won't work. 
 @app.route('/query/<path:query>')
 def web_query(query):
     # Frontend slugifies the urls by converting spaces to ' '. 
     query = query.replace('-', ' ')
-    
-    result, error, status_code = process_query(query)
-    if error:
-        return error, status_code
-    return render_template('query.html', **result)
+    return render_template('query.html', products=core.get_search_results(query))
 
-@app.route('/api/query', methods=['POST'])
+@app.route('/api/query')
 def api_query():
-    data = request.json
-    query = data.get('query')
-    result, error, status_code = process_query(query)
-    if error:
-        return jsonify({"error": error}), status_code
-    return jsonify(result)
-
-def process_product(index):
-    global image_embeddings, final_df, similar_products_cache
-
-    if isinstance(index, str) and index.startswith('myntra-'):
-        index = index[len('myntra-'):]
-        index = int(index)
-        index_list = final_df[final_df['productId'] == index]['index'].tolist()
-        if not index_list:
-            return None, "Product not found", 404
-        index = index_list[0]
-
     try:
-        index = int(index)
-    except ValueError:
-        return None, "Invalid product index", 400
+        data = request.json
+        query = data.get('query')
+        return jsonify({'products' : core.process_query(query)})
+    except Exception as e:
+        return jsonify({'error' : e})
 
-    # topk_indices, topk_scores = getTopK(image_embeddings[index])
-     # We use cached similar products, instead of computing similarity online. 
-    topk_indices = similar_products_cache[index][:100]
 
-    products = final_df.iloc[topk_indices.tolist()].to_dict('records')
-    current_product = final_df.iloc[index].to_dict()
-    return {
-        "current_product": current_product,
-        "products": products,
-        "topk_scores": []
-    }, None, 200
-
-@app.route('/product/<string:slug>/<int:index>')
-def web_product(slug, index):
-    result, error, status_code = process_product(index)
-    if error:
+@app.route('/product/<string:slug>/<int:product_id>')
+def web_product(slug, product_id):
+    user_id = current_user.id if current_user.is_authenticated else None
+    product = core.get_product(product_id, user_id=user_id)
+    if not product:
         return redirect('/')
-    is_wishlisted=False
+
     if current_user.is_authenticated:
-        # check wishlist.
-        wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_index=index).first()
-        if wishlist_item:
-            is_wishlisted = True
-            
-        user_click = UserClick(user_id=current_user.id, product_index=index)
+        user_click = UserClick(user_id=current_user.id, product_index=product_id)
         db.session.add(user_click)
         # TODO: Make this asynchronous. We don't care if we lose some of the clicks. 
         db.session.commit()
-    return render_template('product.html', **result, is_wishlisted=is_wishlisted)
+        
+    # TODO: Use is_wishlisted as part of the product itself. 
+    return render_template('product.html', current_product=product, products=core.get_similar_products(product_id), is_wishlisted=product['is_wishlisted'])
 
-@app.route('/api/product/<index>')
-def api_product(index):
-    result, error, status_code = process_product(index)
-    if error:
-        return jsonify({"error": error}), status_code
-    return jsonify(result)
+# TODO: Figure out how the flow works for product main page. 
+# 1. We pass the product from the previous state, so openeing of a product is instant, and load similar products later. How to retrieve wishlist?
+# 2. We fetch both current product and previous products.
+@app.route('/api/similar_products/<int:product_id>')
+def api_similar_products(product_id):
+    user_id = current_user.id if current_user.is_authenticated else None
+    try:
+        return {'products' : core.get_similar_products(product_id),
+                'is_wishlisted' : core.is_wishlisted(product_id=product_id, user_id=user_id)
+                }
+    except Exception as e:
+        return jsonify({"error": e}), 400
 
 def refresh_token():
     data = {
@@ -448,8 +339,8 @@ def wishlist():
         return redirect('/login-screen')
 
     wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=current_user.id).all()
-    wishlisted_indices = [index[0] for index in wishlisted_products if index[0] < len(final_df)]
-    products = final_df.iloc[wishlisted_indices].to_dict('records')
+    wishlisted_indices = [index[0] for index in wishlisted_products if index[0] < len(products_df)]
+    products = products_df.iloc[wishlisted_indices].to_dict('records')
     return render_template('wishlist.html', products=products)
 
 if __name__ == '__main__':

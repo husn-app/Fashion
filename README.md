@@ -1,3 +1,32 @@
+### User-facing APIs
+## Public - Read only
+1. `get_similar_products(product_id)` -> Returns a list of `128` similar products for the product_id. 
+2. `search(query)` -> Returns a list of `128` matching products.
+3. `get_product(product_id)` -> Returns the product for the product id. 
+4. `get_inspirations(gender)` -> Returns inspirations for the given gender. 
+
+## User - Readonly
+1. `get_feed(user_id)` -> Returns a list of `128` products that are relevant to the user. Each product also has is_wishlisted attribute. 
+2. `get_wishlisted_products(user_id)` -> Returns a list of `128` user's wishlisted products sorted by time desc.
+
+## User - Interactions
+1. `toggle_product_wishlist_status(user_id, product_id)` : toggles the status of product_id's wishlist status and returns {'wishlist_status' : True/False}
+
+## User - Auth : TODO
+1. `add_user_to_db(auth_id, email, name, given_name, family_name, picture_url)` : Adds user to db.
+2. `get_user(user_id, user_email)` : Returns user obj. 
+3. `onboarding` : TODO
+
+## Logging & Analytics. 
+1. `log_search(user_id, session_id, clicked_object_info, query)` - Log which user and session searched for what. clicked_object_info could be inspirations or something written somewhere. 
+2. `log_product_click(user_id, session_id, clicked_obj_info, product_id)` : Log user's product_click. clicked_obj_info could be `inspiration/<subcategory>/<category>`
+
+
+## Session storage
+1. User comes to the website for the first time - Add session_id. 
+2. User logs in for the first time - 
+
+
 ### Myntra Image Loading
 1. Loads the image on the products page using `/f_webp,dpr_2.0,q_60,w_210,c_limit,fl_progressive/assets`
     - f_webp,q_60 means there's lossy webp compression. q_100 takes 81 KB, q_95 50KB, q_80 18KB, q_60 takes 12KB. Default is q_80

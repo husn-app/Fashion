@@ -39,6 +39,12 @@
         }
         // gtag utils end
     </script>
+    {% else %}
+    <!-- Add empty funcalls for all the analytics functions, so that calling them doesn't error out when testing locally.-->
+     <script> 
+        function trackSearch(query) {}
+        function trackProductClick(productIndex) {}
+    </script> 
     {% endif %}
 
     <meta charset="UTF-8">
