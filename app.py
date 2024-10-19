@@ -347,6 +347,7 @@ def api_product(index):
         if wishlist_item:
             is_wishlisted = True
     result['is_wishlisted'] = is_wishlisted
+    print(f"api_product:{result.keys()=}")
     return jsonify(result)
 
 def refresh_token():
@@ -493,7 +494,8 @@ def login_android():
             print(f"Creating new android user: {user}")
         print(f"Existing android user: {user}")
         login_user(user)
-        return jsonify({"is_logged_in": True, "picture_url": user.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE"})
+        gender = current_user.gender if user.onboarding_stage == "COMPLETE" else ""
+        return jsonify({"is_logged_in": True, "picture_url": user.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
     except ValueError as ex:
         print(f"Token verification failed: {ex}")
         return jsonify({'is_logged_in': False}), 400
@@ -520,8 +522,7 @@ import random
 @app.route('/feed_android', methods=['GET'])
 @login_required
 def feed_android():
-    val = random.randint(0, 1)
-    return jsonify({"products": get_feed() if val else []})
+    return jsonify({"products": get_feed()})
 
 @app.route('/onboarding_android', methods=['POST'])
 def post_onboarding():
