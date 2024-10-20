@@ -11,7 +11,6 @@ import pyodbc
 pyodbc.pooling = False
 
 from authlib.integrations.flask_client import OAuth
-import requests
 from config import Config
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from models import User, WishlistItem, UserClick
@@ -59,8 +58,6 @@ google = oauth.register(
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     client_kwargs={
         'scope': 'openid email profile', # https://www.googleapis.com/auth/user.birthday.read https://www.googleapis.com/auth/user.gender.read',
-        'access_type': 'offline',   # to get refresh token
-        'prompt': 'consent',        # to ensure refresh token is received
     },
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     include_granted_scopes=True
@@ -174,9 +171,6 @@ def onboarding():
         # Redirect to home or another page after processing
         return redirect('/')
 
-
-
-
 # Path captures anything that comes after /query. So any other routes like /query/some-route/<> won't work. 
 @app.route('/query/<path:query>')
 def web_query(query):
@@ -222,45 +216,6 @@ def api_similar_products(product_id):
                 }
     except Exception as e:
         return jsonify({"error": e}), 400
-
-def refresh_token():
-    data = {
-        "client_id": app.config['GOOGLE_CLIENT_ID'],
-        "client_secret": app.config['GOOGLE_CLIENT_SECRET'],
-        "refresh_token": current_user.refresh_token,
-        "grant_type": "refresh_token"
-    }
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    response = requests.post(app.config['REFRESH_TOKEN_URL'], data=data, headers=headers)
-
-    # Check the response
-    if response.status_code != 200:
-        print(f"Error: {response.status_code}\n{response.text}")
-        return False
-    
-    token_data = response.json()
-    print("New access token:", token_data)
-    session['access_token'] = token_data.get('access_token')
-    session['expires_at'] = (int)(time.time()) + token_data['expires_in']
-    return True
-
-
-def check_and_refresh_token():
-    expires_at = session.get('expires_at')
-    if not expires_at or expires_at < time.time():
-        if not refresh_token():
-            print(f"Refresh failed, redirect to /login. {session=}")
-            return False
-    return True
-
-@app.before_request
-def check_token_for_authenticated_user():
-    if current_user.is_authenticated:
-        if not check_and_refresh_token():
-            logout_user()
-            return redirect(url_for('login'))
         
 # Route for login
 @app.route('/login')
@@ -272,7 +227,7 @@ def login():
     if 'http://' in redirect_uri and '127.0.0.1' not in redirect_uri:
         redirect_uri = redirect_uri.replace('http://', 'https://')
     print(f"{redirect_uri=}")
-    return google.authorize_redirect(redirect_uri, access_type="offline") # needed for refresh token
+    return google.authorize_redirect(redirect_uri)
 
 # Route for authorization callback
 @app.route('/authorize')
@@ -280,10 +235,10 @@ def authorize():
     if current_user.is_authenticated:
         return redirect('/')
     try:
-        token = google.authorize_access_token()
-        print(f"authorize:{token=}")
+        _ = google.authorize_access_token()
         resp = google.get('userinfo')
         user_info = resp.json()
+        print(f"Google-Authorize:{user_info=}")
         user = User.query.filter_by(email=user_info['email']).first()
         if not user:
             user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
@@ -292,12 +247,8 @@ def authorize():
             db.session.add(user)
             print(f"Created {user=}")
 
-        if token.get('refresh_token'):
-            user.refresh_token = token.get('refresh_token')
         db.session.commit()
 
-        session['access_token'] = token.get('access_token')
-        session['expires_at'] = token.get('expires_at')
         login_user(user)
     except Exception as ex:
         print(f"Couldn't login user:{ex}")
@@ -309,8 +260,6 @@ def authorize():
 @app.route('/logout')
 def logout():
     logout_user()
-    session.pop('access_token', None)
-    session.pop('expires_at', None)
     return redirect('/')
 
 
