@@ -18,9 +18,6 @@ from flask_migrate import Migrate
 import random
 import datetime
 
-import random
-
-
 app = Flask(__name__)
 app.config.from_object(Config)  
 
@@ -32,9 +29,11 @@ print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}")
 
 import core
 
+oauth = OAuth(app)
+import google_auth_handler
+google_oauth = google_auth_handler.get_google_oauth(oauth)
 
-assert app.config['GOOGLE_CLIENT_ID'] is not None
-assert app.config['GOOGLE_CLIENT_SECRET'] is not None
+
 # Initialize LoginManager
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -51,18 +50,6 @@ def load_user(id):
     except Exception as ex:
         print(f"Couldnt load user:{ex}")
 
-
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
-    client_kwargs={
-        'scope': 'openid email profile', # https://www.googleapis.com/auth/user.birthday.read https://www.googleapis.com/auth/user.gender.read',
-    },
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    include_granted_scopes=True
-)
-
 @app.template_filter('shuffle')
 def filter_shuffle(seq):
     try:
@@ -71,7 +58,6 @@ def filter_shuffle(seq):
         return result
     except:
         return seq
-
 
 @app.context_processor
 def inject_deployment_type():
@@ -205,31 +191,29 @@ def login():
     if 'http://' in redirect_uri and '127.0.0.1' not in redirect_uri:
         redirect_uri = redirect_uri.replace('http://', 'https://')
     print(f"{redirect_uri=}")
-    return google.authorize_redirect(redirect_uri)
+    return google_oauth.authorize_redirect(redirect_uri)
 
 # Route for authorization callback
 @app.route('/authorize')
 def authorize():
     if current_user.is_authenticated:
         return redirect('/')
-    try:
-        _ = google.authorize_access_token()
-        resp = google.get('userinfo')
-        user_info = resp.json()
-        print(f"Google-Authorize:{user_info=}")
-        user = User.query.filter_by(email=user_info['email']).first()
-        if not user:
-            user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
-                        given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
-                        picture_url=user_info.get('picture'))
-            db.session.add(user)
-            print(f"Created {user=}")
+    user_info = google_auth_handler.get_user_info()
+    if user_info:   
+        try:
+            user = User.query.filter_by(email=user_info['email']).first()
+            if not user:
+                user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
+                            given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
+                            picture_url=user_info.get('picture'))
+                db.session.add(user)
+                print(f"Created {user=}")
 
-        db.session.commit()
+            db.session.commit()
 
-        login_user(user)
-    except Exception as ex:
-        print(f"Couldn't login user:{ex}")
+            login_user(user)
+        except Exception as e:
+            print(f"Couldn't login user:{e}")
 
     next_url = session.pop('next_url', '/')
     return redirect(next_url)
