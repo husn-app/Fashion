@@ -1,6 +1,8 @@
 import torch.nn.functional as F
 import artifacts_loader
-from models import WishlistItem
+from models import WishlistItem, UserClick
+from config import Config
+import random
 
 
 model, tokenizer = artifacts_loader.load_model_and_tokenizer()
@@ -67,3 +69,27 @@ def get_inspirations(gender):
     if gender not in ('MAN', 'WOMAN'):
         return []
     return inspirations_obj[gender]
+
+
+def get_feed(user_id):
+    global products_df
+    
+    # Get clicked products.
+    clicks = UserClick.query.with_entities(UserClick.product_index, UserClick.clicked_at) \
+        .filter_by(user_id=user_id) \
+            .order_by(UserClick.clicked_at.desc()) \
+                .distinct() \
+                    .limit(Config.FEED_CLICK_SAMPLE) \
+                        .all()
+    clicked_products = [click.product_index for click in clicks]
+    
+    # Don't return results if user hasn't made some clicks yet.
+    if len(clicked_products) < Config.FEED_MINIMUM_CLICKS:
+        return []
+    
+    # sample feed porducts. 
+    feed_products_indexes = list(set(similar_products_cache[clicked_products].view(-1).detach().tolist()))
+    sampled_feed_indexes = random.sample(feed_products_indexes,
+                                         min(Config.FEED_NUM_PRODUCTS, len(feed_products_indexes)))
+    
+    return products_df.iloc[sampled_feed_indexes].to_dict('records')

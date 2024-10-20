@@ -72,28 +72,6 @@ def filter_shuffle(seq):
     except:
         return seq
 
-def get_feed():
-    global products_df
-    
-    # Get clicked products.
-    clicks = UserClick.query.with_entities(UserClick.product_index, UserClick.clicked_at) \
-        .filter_by(user_id=current_user.id) \
-            .order_by(UserClick.clicked_at.desc()) \
-                .distinct() \
-                    .limit(app.config['FEED_CLICK_SAMPLE']) \
-                        .all()
-    clicked_products = [click.product_index for click in clicks]
-    
-    # Don't return results if user hasn't made some clicks yet.
-    if len(clicked_products) < app.config['FEED_MINIMUM_CLICKS']:
-        return []
-    
-    # sample feed porducts. 
-    feed_products_indexes = list(set(similar_products_cache[clicked_products].view(-1).detach().tolist()))
-    sampled_feed_indexes = random.sample(feed_products_indexes,
-                                         min(app.config['FEED_NUM_PRODUCTS'], len(feed_products_indexes)))
-    
-    return products_df.iloc[sampled_feed_indexes].to_dict('records')
 
 @app.context_processor
 def inject_deployment_type():
@@ -108,7 +86,7 @@ def feed_route():
         session['login_message'] = "Login to see your personalized feed!"
         return redirect('/login-screen')
 
-    feed_products = get_feed()
+    feed_products = core.get_feed(current_user.id)
     return render_template('feed.html', feed_products=feed_products)
 
 @app.route('/login-screen')
