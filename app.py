@@ -190,7 +190,7 @@ def login():
     if g.user_id:
         return redirect('/')
     session['next_url'] = request.referrer or '/'
-    redirect_uri = url_for('authorize', _external=True)
+    redirect_uri = url_for('authorize', _external=True, _scheme=Config.PREFERRED_URL_SCHEME)
     print(f"{redirect_uri=}")
     return google_oauth.authorize_redirect(redirect_uri)
 
