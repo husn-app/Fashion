@@ -1,6 +1,6 @@
 
-from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session
-import time
+from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session, g
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 import torch
 torch.set_grad_enabled(False)
@@ -12,11 +12,11 @@ pyodbc.pooling = False
 
 from authlib.integrations.flask_client import OAuth
 from config import Config
-from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 from models import User, WishlistItem, UserClick
 from flask_migrate import Migrate
 import random
 import datetime
+import google_auth_handler
 
 app = Flask(__name__)
 app.config.from_object(Config)  
@@ -27,28 +27,22 @@ db.init_app(app)
 migrate = Migrate(app, db)
 print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}")
 
-import core
+
+# Register cookie handlers.
+import cookie_handler
+app.before_request(cookie_handler.get_auth_info)
+app.after_request(cookie_handler.update_cookies)
+
+
+# Define after db, because it uses db.session for writes.
+import core ## Loads all artifacts as well. 
 
 oauth = OAuth(app)
-import google_auth_handler
 google_oauth = google_auth_handler.get_google_oauth(oauth)
-
-
-# Initialize LoginManager
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
 
 ONBOARDING_COMPLETE = 'COMPLETE'
 MAN, WOMAN = 'MAN', 'WOMAN'
 
-@login_manager.user_loader
-def load_user(id):
-    try:
-        return User.query.get(int(id))
-    except ValueError:
-        return None
-    except Exception as ex:
-        print(f"Couldnt load user:{ex}")
 
 @app.template_filter('shuffle')
 def filter_shuffle(seq):
@@ -65,14 +59,14 @@ def inject_deployment_type():
 
 @app.route('/feed')
 def feed_route():
-    if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
+    if g.user_id and request.cookies.get('onboarding_stage') != ONBOARDING_COMPLETE:
         return redirect('/onboarding')
 
-    if not current_user.is_authenticated:
+    if not g.user_id:
         session['login_message'] = "Login to see your personalized feed!"
         return redirect('/login-screen')
 
-    feed_products = core.get_feed(current_user.id)
+    feed_products = core.get_feed(g.user_id)
     return render_template('feed.html', feed_products=feed_products)
 
 @app.route('/login-screen')
@@ -82,10 +76,10 @@ def login_screen():
 
 @app.route('/')
 def home():
-    if current_user.is_authenticated and current_user.onboarding_stage != ONBOARDING_COMPLETE:
+    if g.user_id and request.cookies.get('onboarding_stage') != ONBOARDING_COMPLETE:
         return redirect('/onboarding')
     
-    if not current_user.is_authenticated:
+    if not g.user_id:
         return redirect('/inspiration')
     
     return redirect('/feed')
@@ -93,16 +87,19 @@ def home():
 @app.route('/inspiration', defaults={'gender': None})
 @app.route('/inspiration/<path:gender>')
 def inspirations(gender):
-    if current_user.is_authenticated and current_user.gender in (MAN, WOMAN):
-        gender = current_user.gender.lower()
-    gender = gender or 'woman'
-    if gender not in ('man', 'woman'):
+    user_gender = request.cookies.get('gender')
+    if g.user_id and user_gender in (MAN, WOMAN):
+        gender = user_gender
+
+    gender = gender or WOMAN
+    gender = gender.upper()
+    if gender not in (MAN, WOMAN):
         return redirect('/inspiration')
-    return render_template('inspirations.html', inspirations=core.get_inspirations(gender), gender=gender)
+    return render_template('inspirations.html', inspirations=core.get_inspirations(gender), gender=gender.lower())
 
 @app.route('/onboarding', methods = ['GET', 'POST'])
 def onboarding():
-    if not current_user.is_authenticated:
+    if not g.user_id:
         return redirect('/login')
     if request.method == 'GET':
         return render_template('onboarding.html')
@@ -122,7 +119,7 @@ def onboarding():
             return redirect('/onboarding')
         
         try:
-            user = User.query.get(current_user.id)
+            user = User.query.get(g.user_id)
             user.gender = gender
             user.birth_year = datetime.datetime.now().year - age
             user.onboarding_stage = ONBOARDING_COMPLETE
@@ -154,13 +151,13 @@ def api_query():
 
 @app.route('/product/<string:slug>/<int:product_id>')
 def web_product(slug, product_id):
-    user_id = current_user.id if current_user.is_authenticated else None
+    user_id = g.user_id if g.user_id else None
     product = core.get_product(product_id, user_id=user_id)
     if not product:
         return redirect('/')
 
-    if current_user.is_authenticated:
-        user_click = UserClick(user_id=current_user.id, product_index=product_id)
+    if g.user_id:
+        user_click = UserClick(user_id=g.user_id, product_index=product_id)
         db.session.add(user_click)
         # TODO: Make this asynchronous. We don't care if we lose some of the clicks. 
         db.session.commit()
@@ -173,7 +170,7 @@ def web_product(slug, product_id):
 # 2. We fetch both current product and previous products.
 @app.route('/api/similar_products/<int:product_id>')
 def api_similar_products(product_id):
-    user_id = current_user.id if current_user.is_authenticated else None
+    user_id = g.user_id if g.user_id else None
     try:
         return {'products' : core.get_similar_products(product_id),
                 'is_wishlisted' : core.is_wishlisted(product_id=product_id, user_id=user_id)
@@ -184,52 +181,44 @@ def api_similar_products(product_id):
 # Route for login
 @app.route('/login')
 def login():
-    if current_user.is_authenticated:
+    if g.user_id:
         return redirect('/')
     session['next_url'] = request.referrer or '/'
     redirect_uri = url_for('authorize', _external=True)
-    if 'http://' in redirect_uri and '127.0.0.1' not in redirect_uri:
-        redirect_uri = redirect_uri.replace('http://', 'https://')
     print(f"{redirect_uri=}")
     return google_oauth.authorize_redirect(redirect_uri)
 
 # Route for authorization callback
 @app.route('/authorize')
 def authorize():
-    if current_user.is_authenticated:
-        return redirect('/')
-    user_info = google_auth_handler.get_user_info()
-    if user_info:   
-        try:
-            user = User.query.filter_by(email=user_info['email']).first()
-            if not user:
-                user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
-                            given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
-                            picture_url=user_info.get('picture'))
-                db.session.add(user)
-                print(f"Created {user=}")
-
-            db.session.commit()
-
-            login_user(user)
-        except Exception as e:
-            print(f"Couldn't login user:{e}")
-
+    if g.user_id:
+        return redirect("/")
     next_url = session.pop('next_url', '/')
+    
+    user_info = google_auth_handler.get_user_info(google_oauth)
+    if not user_info:
+        return redirect(next_url)
+    
+    user = core.create_user_if_needed(user_info)
+    if not user:
+        return redirect(next_url)
+        
+    cookie_handler.set_cookie_updates_at_login(user=user)
     return redirect(next_url)
 
 # Route for logout
 @app.route('/logout')
 def logout():
-    logout_user()
-    return redirect('/')
+    response = make_response(redirect('/'))
+    return cookie_handler.get_logged_out_response(response)
 
 
 @app.route('/wishlist/<int:index>', methods=['POST'])
-@login_required
 def toggle_wishlist_product(index):
-    # wishlist_item = WishlistItem(user_id=current_user.id, product_index=index)
-    wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_index=index).first()
+    if not g.user_id:
+        return '', 401
+    # wishlist_item = WishlistItem(user_id=g.user_id, product_index=index)
+    wishlist_item = WishlistItem.query.filter_by(user_id=g.user_id, product_index=index).first()
     if wishlist_item:
         # Item exists, so remove it from the wishlist
         db.session.delete(wishlist_item)
@@ -237,7 +226,7 @@ def toggle_wishlist_product(index):
         print("Item removed from wishlist.")
         return jsonify({"is_wishlisted": False}), 200
         # Item does not exist, so add it to the wishlist
-    new_item = WishlistItem(user_id=current_user.id, product_index=index)
+    new_item = WishlistItem(user_id=g.user_id, product_index=index)
     db.session.add(new_item)
     db.session.commit()
     print("Item added to wishlist.")
@@ -245,11 +234,11 @@ def toggle_wishlist_product(index):
 
 @app.route('/wishlist')
 def wishlist():
-    if not current_user.is_authenticated:
+    if not g.user_id:
         session['login_message'] = "Login to see your wishlist!"
         return redirect('/login-screen')
 
-    wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=current_user.id).all()
+    wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=g.user_id).all()
     wishlisted_indices = [index[0] for index in wishlisted_products if index[0] < len(products_df)]
     products = products_df.iloc[wishlisted_indices].to_dict('records')
     return render_template('wishlist.html', products=products)

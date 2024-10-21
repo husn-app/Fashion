@@ -1,9 +1,10 @@
 import torch.nn.functional as F
 import artifacts_loader
-from models import WishlistItem, UserClick
+from models import WishlistItem, UserClick, User
 from config import Config
 import random
-
+from app import db
+from flask import g
 
 model, tokenizer = artifacts_loader.load_model_and_tokenizer()
 products_df = artifacts_loader.load_products_df()
@@ -93,3 +94,37 @@ def get_feed(user_id):
                                          min(Config.FEED_NUM_PRODUCTS, len(feed_products_indexes)))
     
     return products_df.iloc[sampled_feed_indexes].to_dict('records')
+
+
+def create_user_if_needed(user_info):
+    try:
+        user = User.query.filter_by(email=user_info['email']).first()
+        if user:
+            return user
+        user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
+                    given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
+                    picture_url=user_info.get('picture'))
+        db.session.add(user)
+        print(f"INFO: Created {user=}")
+        db.session.commit()
+        return user
+    except Exception as e:
+        print(f"CRITICAL : User couldn't login. {user_info=}, {e=}")
+    return None
+
+def get_full_user():
+    if not g.user_id:
+        return None
+    if g.current_user:
+        return g.current_user
+
+    g.current_user = None
+    try:
+        g.current_user = User.query.filter_by(email=user_info['email']).first()
+    except ValueError:
+        print(f"CRITICAL: Incorrect user_id in cookies. {g.user_id=}")
+    except Exception as e:
+        print(f"CRITICAL: Can't fetch full user {user_id=}")
+        
+    return g.current_user
+    

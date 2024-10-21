@@ -15,13 +15,13 @@ def get_google_oauth(oauth):
         include_granted_scopes=True
     )
     
-def get_user_info():
+def get_user_info(google_oauth):
     try:
-        _ = google.authorize_access_token()
-        resp = google.get('userinfo')
+        _ = google_oauth.authorize_access_token()
+        resp = google_oauth.get('userinfo')
         user_info = resp.json()
-        print(f"Google-Authorize:{user_info=}")
+        print(f"INFO: Google-Authorize:{user_info=}")
         return user_info
     except Exception as e:
-        print(f"Error get user's google info {e}")
+        print(f"ERROR: Error in getting user's google info {e}")
     return None

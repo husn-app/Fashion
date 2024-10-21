@@ -98,7 +98,7 @@
             var index = index;
             var heartIcon = event.currentTarget.querySelector('.heart-icon');
 
-            {% if current_user.is_authenticated %}
+            {% if g.user_id %}
             // Send POST request to toggle wishlist status
             fetch('/wishlist/' + index, {
                 method: 'POST',
