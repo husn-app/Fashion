@@ -1,6 +1,6 @@
 from app import db
 from models import UserClick
-from flask import g
+from flask import g, request
 from config import Config
 
 def is_bot():
