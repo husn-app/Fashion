@@ -27,6 +27,9 @@ class Config(object):
         'pool_recycle': int(os.environ.get('POOL_RECYCLE', 15 * 60)),  # Recycle connections every 15 mins.
         'pool_pre_ping' : POOL_PRE_PING
     }
+    
+    SCRAPING_BOTS = os.environ.get('SCRAPING_BOTS', 'semrushbot,dataforseobot,ahrefsbot,amazonbot,googlebot,bingbot,openai.com')
+    SCRAPING_BOTS = [x.strip() for x in SCRAPING_BOTS.split(',') if x.strip()]
 
         
     SQLALCHEMY_TRACK_MODIFICATIONS = False
