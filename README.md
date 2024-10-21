@@ -1,7 +1,7 @@
 ### User-facing APIs
 ## Public - Read only
 1. `get_similar_products(product_id)` -> Returns a list of `128` similar products for the product_id. 
-2. `search(query)` -> Returns a list of `128` matching products.
+2. `get_search_results(query)` -> Returns a list of `128` matching products.
 3. `get_product(product_id)` -> Returns the product for the product id. 
 4. `get_inspirations(gender)` -> Returns inspirations for the given gender. 
 
@@ -22,9 +22,13 @@
 2. `log_product_click(user_id, session_id, clicked_obj_info, product_id)` : Log user's product_click. clicked_obj_info could be `inspiration/<subcategory>/<category>`
 
 
-## Session storage
-1. User comes to the website for the first time - Add session_id. 
-2. User logs in for the first time - 
+## Authentication & Cookies.
+1. `@app.before_request get_auth_info()` : 
+   * "auth_info" cookies  not present -> new user. Set auth_info cookies with newly issued session_id, set g.session_id
+   * "auth_info" cookies present -> set g.user_id, g.session_id
+   * "auth_info" cookies tampered -> IGNORE -> user_id, session_id = None 
+2. `login()` : sets {'auth_info' : encrypted(user_id, session_id)} and 'picture_url', 'email', 'onboarding_stage', 'gender'.
+3. `logout()` : clears all cookies - but not session_id?
 
 
 ### Myntra Image Loading
