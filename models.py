@@ -16,6 +16,7 @@ class User(db.Model, UserMixin):
     birth_year = db.Column(db.Integer, nullable=True)
     onboarding_stage = db.Column(db.Enum('PENDING', 'COMPLETE', name='onboarding_stage_enum'), nullable=True)
     wishlisted_products = db.relationship('WishlistItem', backref='user')
+    created_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
 
 class WishlistItem(db.Model):
     id = db.Column(db.Integer, primary_key=True) # Add a primary key
