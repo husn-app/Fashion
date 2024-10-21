@@ -14,7 +14,6 @@ from config import Config
 from models import User
 from flask_migrate import Migrate
 import random
-import datetime
 import google_auth_handler
 
 app = Flask(__name__)
