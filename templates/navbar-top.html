@@ -3,12 +3,12 @@
         style="font-family: 'Times New Roman', Times, serif; color:black; font-size:xx-large;">Husn</span>
     <!-- Right-aligned button area -->
     <div class="ml-auto">
-        {% if current_user.is_authenticated %}
+        {% if g.user_id %}
         <!-- User is logged in, display profile picture with a dropdown -->
         <div class="dropdown">
             <a class="nav-link custom-dropdown-toggle" href="#" id="profileMenu" role="button"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="padding: 0;">
-                <img src="{{ current_user.picture_url }}" alt="Profile" class="rounded-circle" width="40"
+                <img src="{{ g.picture_url }}" alt="Profile" class="rounded-circle" width="40"
                     height="40" style="border-radius: 50%;">
             </a>
             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profileMenu">

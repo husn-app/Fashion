@@ -4,7 +4,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config(object):
     DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
     DATA_ROOT_DIR = os.environ.get('DATA_ROOT_DIR', '/husn-cool-storage/20231014/') if (DEPLOYMENT_TYPE in ('PROD', 'DEV')) else './'
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'Superecret'
+    SECRET_KEY = os.environ.get('HUSN_SECRET_KEY')
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
     REFRESH_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -29,3 +29,10 @@ class Config(object):
     
     # Inspirations Path
     INSPIRATIONS_PATH = os.environ.get('INSPIRATIONS_PATH', '')
+    
+    # Cookies settings
+    MAX_COOKIE_AGE = os.environ.get('MAX_COOKIE_AGE', 3600*24*365*10) # 10 year default
+    SECURE_COOKIES = (DEPLOYMENT_TYPE != 'LOCAL')
+    
+    # http/https
+    PREFERRED_URL_SCHEME = 'https' if (DEPLOYMENT_TYPE != 'LOCAL') else 'http'

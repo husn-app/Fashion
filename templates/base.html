@@ -39,6 +39,12 @@
         }
         // gtag utils end
     </script>
+    {% else %}
+    <!-- Add empty funcalls for all the analytics functions, so that calling them doesn't error out when testing locally.-->
+     <script> 
+        function trackSearch(query) {}
+        function trackProductClick(productIndex) {}
+    </script> 
     {% endif %}
 
     <meta charset="UTF-8">
@@ -92,7 +98,7 @@
             var index = index;
             var heartIcon = event.currentTarget.querySelector('.heart-icon');
 
-            {% if current_user.is_authenticated %}
+            {% if g.user_id %}
             // Send POST request to toggle wishlist status
             fetch('/wishlist/' + index, {
                 method: 'POST',
