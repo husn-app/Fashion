@@ -14,9 +14,11 @@ class Config(object):
     if os.environ.get('DATABASE_URI') and DATABASE_TYPE == 'PROD':
         SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
         
+    POOL_PRE_PING = (os.environ.get('POOL_PRE_PING', 'True').lower() == 'true')
     # By default sqlalchemy doesn't recycle connections which can lead to "stale" connections.
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_recycle': 3600  # Recycle connections every hour (3600 seconds)
+        'pool_recycle': 15 * 60,  # Recycle connections every hour (3600 seconds)
+        'pool_pre_ping' : POOL_PRE_PING
     }
 
         

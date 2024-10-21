@@ -19,7 +19,7 @@ import google_auth_handler
 
 app = Flask(__name__)
 app.config.from_object(Config) 
-print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}") 
+print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}, {app.config['POOL_PRE_PING']=}") 
 
 # Import db after disabling pyodbc pooling.
 from db import db
@@ -245,4 +245,4 @@ def api_onboarding():
         return '', 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=(Config.DEPLOYMENT_TYPE == 'LOCAL'))
