@@ -33,3 +33,5 @@ class UserClick(db.Model):
     search_query = db.Column(db.String, nullable=True)
     referrer = db.Column(db.String, nullable=True)
     clicked_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    ip = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.String(255), nullable=True)
