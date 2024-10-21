@@ -13,7 +13,14 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'sqlite.db')
     if os.environ.get('DATABASE_URI') and DATABASE_TYPE == 'PROD':
         SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
-        
+    
+    # NOTE: Database Disconnections : Read https://docs.sqlalchemy.org/en/20/core/pooling.html#disconnect-handling-optimistic
+    # In case of higher pool_pre_ping trip we can completely disable it. Although between azure servers it should be super-fast <= 10ms.
+    # pool_pre_ping is optimistic that it checks connection staleness before every query, and refreshes if needed. 
+    # pool_recycles only refreshes when the time has elapsed. But the connection could be stale due to other reasons, like database restart / errors. 
+    # in which case it'll still run into errors, **until probably the pool_recycle time has elapsed**. We can even keep it as low as 1 min?
+    # But the session reconnnection is more costly - probably 200ms-300ms, and can overload if multiple sessions are being refreshed around the same time.
+    # But it has the advantage of being called lesser number of times. 
     POOL_PRE_PING = (os.environ.get('POOL_PRE_PING', 'True').lower() == 'true')
     # By default sqlalchemy doesn't recycle connections which can lead to "stale" connections.
     SQLALCHEMY_ENGINE_OPTIONS = {
