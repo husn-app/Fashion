@@ -55,6 +55,14 @@ def filter_shuffle(seq):
 def inject_deployment_type():
     return dict(deployment_type=app.config['DEPLOYMENT_TYPE'])
 
+@app.route('/robots.txt')
+def robots_txt():
+    if Config.DEPLOYMENT_TYPE == 'PROD':
+        return app.send_static_file('robots.txt')
+    return app.send_static_file('robots-dev.txt')
+    
+
+
 @app.route('/login-screen')
 def login_screen():
     return render_template('login_screen.html')
