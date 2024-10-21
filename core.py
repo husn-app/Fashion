@@ -5,6 +5,8 @@ from config import Config
 import random
 from app import db
 from flask import g
+import datetime
+import cookie_handler
 
 model, tokenizer = artifacts_loader.load_model_and_tokenizer()
 products_df = artifacts_loader.load_products_df()
@@ -13,6 +15,9 @@ faiss_index = artifacts_loader.load_faiss_index(image_embeddings)
 similar_products_cache = artifacts_loader.load_similar_products_cache()
 inspirations_obj = artifacts_loader.load_inspirations()
 
+
+MAN, WOMAN = 'MAN', 'WOMAN'
+ONBOARDING_COMPLETE = 'COMPLETE'
 
 def is_wishlisted_product(product_id, user_id=None):
     if (not user_id) or (not product_id):
@@ -64,12 +69,15 @@ def get_similar_products(product_id, n = 128):
 def get_inspirations(gender):
     """Returns inspirations for the given gender or empty if gender is invalid."""
     global inspirations_obj
-    gender = gender or 'WOMAN'
+    if (not gender) and g.gender:
+        gender = g.gender
+    gender = gender or WOMAN
     gender = gender.upper()
     
-    if gender not in ('MAN', 'WOMAN'):
-        return []
-    return inspirations_obj[gender]
+    if gender not in (MAN, WOMAN):
+        gender = WOMAN
+
+    return inspirations_obj[gender], gender.lower()
 
 
 def get_feed(user_id):
@@ -78,10 +86,11 @@ def get_feed(user_id):
     # Get clicked products.
     clicks = UserClick.query.with_entities(UserClick.product_index, UserClick.clicked_at) \
         .filter_by(user_id=user_id) \
-            .order_by(UserClick.clicked_at.desc()) \
-                .distinct() \
-                    .limit(Config.FEED_CLICK_SAMPLE) \
-                        .all()
+        .filter(UserClick.product_index.isnot(None)) \
+        .order_by(UserClick.clicked_at.desc()) \
+        .distinct() \
+        .limit(Config.FEED_CLICK_SAMPLE) \
+        .all()
     clicked_products = [click.product_index for click in clicks]
     
     # Don't return results if user hasn't made some clicks yet.
@@ -120,11 +129,65 @@ def get_full_user():
 
     g.current_user = None
     try:
-        g.current_user = User.query.filter_by(email=user_info['email']).first()
-    except ValueError:
-        print(f"CRITICAL: Incorrect user_id in cookies. {g.user_id=}")
+        g.current_user = User.query.filter_by(id=g.user_id).first()
+    except ValueError as e:
+        print(f"CRITICAL: Incorrect user_id in cookies. {g.user_id=}, {e=}")
     except Exception as e:
-        print(f"CRITICAL: Can't fetch full user {user_id=}")
+        print(f"CRITICAL: Can't fetch full user {g.user_id=}, {e=}")
         
     return g.current_user
+
+def get_wishlisted_products(user_id):
+    global products_df
+    if not user_id:
+        return [], "User not authenticated"
+    try:
+        wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=user_id).all()
+        wishlisted_valid_indices = [index[0] for index in wishlisted_products if index[0] < len(products_df)]
+        return products_df.iloc[wishlisted_valid_indices].to_dict('records'), None
+    except Exception as e:
+        print(f'ERROR: fetching wishlist {user_id=}, {e=}')
+        return [], e
     
+def get_wishlisted_status(user_id, product_id):
+    try:
+        wishlist_item = WishlistItem.query.filter_by(user_id=user_id, product_index=product_id).first()
+        if wishlist_item:
+            # Item exists, so remove it from the wishlist
+            db.session.delete(wishlist_item)
+            db.session.commit()
+            print(f"INFO: Item removed from wishlist, {user_id=}, {product_id=}")
+            return False, None
+            # Item does not exist, so add it to the wishlist
+
+        new_item = WishlistItem(user_id=user_id, product_index=product_id)
+        db.session.add(new_item)
+        db.session.commit()
+        print(f"INFO Item added to wishlist. {user_id=}, {product_id=}")
+        return True, None
+    except Exception as e:
+        return False, e
+    
+def complete_onboarding(age, gender):
+    try:
+        gender, age = str(gender), int(age)
+        assert gender in (MAN, WOMAN)
+        assert age >= 12 and age <= 72
+    except:
+        print(f"CRITICAL: Error parsing {gender=} and {age=}")
+        return False
+    
+    try:
+        user = User.query.get(g.user_id)
+        user.gender = gender
+        user.birth_year = datetime.datetime.now().year - age
+        user.onboarding_stage = ONBOARDING_COMPLETE
+        
+        db.session.commit()
+    except Exception as e:
+        print('ERROR: Error commiting onboarding data to db: ', e)
+        return False
+    
+    # Update cookies. 
+    cookie_handler.update_cookies_at_onboarding(gender=gender, onboarding_stage=ONBOARDING_COMPLETE)
+    return True

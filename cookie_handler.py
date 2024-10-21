@@ -26,8 +26,6 @@ def get_auth_info():
     cookies = request.cookies
     auth_cookie = cookies.get('auth_info')
     
-    print(f"INFO: {cookies=}")
-    
     # New user.
     if auth_cookie is None:
         g.session_id = str(uuid4())
@@ -42,7 +40,6 @@ def get_auth_info():
     # Existing user.    
     try:
         auth_cookie_decrypted = serializer.loads(auth_cookie, max_age=Config.MAX_COOKIE_AGE)
-        print(f"INFO: {auth_cookie_decrypted=}")
         g.user_id, g.session_id = auth_cookie_decrypted.get('user_id'), auth_cookie_decrypted.get('session_id')
         for key in ['picture_url', 'gender', 'onboarding_stage', 'email']:
             setattr(g, key, cookies.get(key))
@@ -71,6 +68,12 @@ def set_cookie_updates_at_login(user):
         'email' : user.email,
         'gender' : user.gender,
         'onboarding_stage' : user.onboarding_stage or 'PENDING'
+    })
+    
+def update_cookies_at_onboarding(gender, onboarding_stage):
+    g.cookie_updates.update({
+        'gender' : gender,
+        'onboarding_stage' : onboarding_stage
     })
     
 def get_logged_out_response(response):

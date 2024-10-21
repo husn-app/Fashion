@@ -36,3 +36,5 @@ class Config(object):
     
     # http/https
     PREFERRED_URL_SCHEME = 'https' if (DEPLOYMENT_TYPE != 'LOCAL') else 'http'
+    
+    LOGGING_DESTINATION = os.environ.get('LOGGING_DESTINATION', 'LOG')

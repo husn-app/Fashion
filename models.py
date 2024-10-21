@@ -21,10 +21,14 @@ class WishlistItem(db.Model):
     id = db.Column(db.Integer, primary_key=True) # Add a primary key
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     product_index = db.Column(db.Integer, index=True)
+    referrer = db.Column(db.String, nullable=True)
     created_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
     
 class UserClick(db.Model):
     id = db.Column(db.Integer, primary_key=True) # Add a primary key
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
-    product_index = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True, nullable=True)
+    session_id = db.Column(db.String, nullable=True)
+    product_index = db.Column(db.Integer, nullable=True)
+    search_query = db.Column(db.String, nullable=True)
+    referrer = db.Column(db.String, nullable=True)
     clicked_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))

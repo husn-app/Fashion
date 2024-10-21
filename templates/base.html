@@ -100,7 +100,7 @@
 
             {% if g.user_id %}
             // Send POST request to toggle wishlist status
-            fetch('/wishlist/' + index, {
+            fetch('/api/wishlist/' + index, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -109,7 +109,7 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.is_wishlisted) {
+                    if (data.wishlist_status) {
                         // When the product is added to the wishlist
                         console.log('Added to wishlist');
                         heartIcon.classList.add('wishlisted');  // Ensure the class is added to fill the heart
