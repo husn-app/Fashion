@@ -1,0 +1,18 @@
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: AhrefsBot  # Now disallowed
+Disallow: /
+
+User-agent: Amazonbot # Now disallowed
+Disallow: /
+
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: bingbot
+Allow: /
