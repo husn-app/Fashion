@@ -19,7 +19,9 @@ import google_auth_handler
 
 app = Flask(__name__)
 app.config.from_object(Config) 
-print(f"using {app.config['DEPLOYMENT_TYPE']=}\n{app.config['DATABASE_TYPE']=}, {app.config['POOL_PRE_PING']=}") 
+
+for key in ['DEPLOYMENT_TYPE', 'DATABASE_TYPE', 'POOL_PRE_PING', 'LOGGING_DESTINATION']:
+    print(f"{key} : {app.config[key]}") 
 
 # Import db after disabling pyodbc pooling.
 from db import db

@@ -17,7 +17,7 @@ class Config(object):
     POOL_PRE_PING = (os.environ.get('POOL_PRE_PING', 'True').lower() == 'true')
     # By default sqlalchemy doesn't recycle connections which can lead to "stale" connections.
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_recycle': 15 * 60,  # Recycle connections every hour (3600 seconds)
+        'pool_recycle': int(os.environ.get('POOL_RECYCLE', 15 * 60)),  # Recycle connections every 15 mins.
         'pool_pre_ping' : POOL_PRE_PING
     }
 
