@@ -182,7 +182,6 @@ def wishlist():
 @app.route('/api/wishlist', methods = ['GET', 'POST'])
 def api_wishlist():
     if not g.user_id:
-        print(f"g.user_id empty")
         return '', 401
     wishlisted_products, err = core.get_wishlisted_products(g.user_id)
     if err:
@@ -257,7 +256,7 @@ def onboarding():
     
 @app.route('/api/onboarding', methods = ['POST'])
 def api_onboarding():
-    print(f"api_onboarding:{request.json=}")
+    print(f"INFO: api_onboarding:{request.json=}")
     if not g.user_id:
         return '', 501
     
@@ -268,17 +267,14 @@ def api_onboarding():
 
 @app.route('/login_android', methods = ['POST'])
 def login_android():
-    print(f"login_android: Cookies: {request.headers.get('Cookie')=}")
     idToken = request.json.get('idToken')
-    print(f"login_android:{request.headers=}\n{idToken=}")
     try:
         id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), app.config['ANDROID_CLIENT_ID'])
         user = core.create_user_if_needed(id_info)
-        print(f"login_android:{user=}")
         cookie_handler.set_cookie_updates_at_login(user=user)
         return jsonify({"is_logged_in": True, "gender": user.gender}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
-    except ValueError as ex:
-        print(f"Token verification failed: {ex}")
+    except ValueError as e:
+        print(f"ERROR: Token verification failed: {e}")
         return jsonify({'is_logged_in': False}), 400
     
 if __name__ == '__main__':
