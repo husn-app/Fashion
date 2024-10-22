@@ -93,8 +93,6 @@ def web_feed():
 
 @app.route('/api/feed')
 def api_feed():
-    if not g.user_id:
-        return '', 401
     return jsonify({'products' : core.get_feed(g.user_id)})
 
 # ============================= #
