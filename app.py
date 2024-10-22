@@ -117,12 +117,10 @@ def web_inspirations(gender):
     inspirations, gender = core.get_inspirations(gender=gender)
     return render_template('inspirations.html', inspirations=inspirations, gender=gender)
 
-@app.route('/api/inspiration', defaults={'gender': None})
+@app.route('/api/inspiration', defaults={'gender': None}, methods = ['GET', 'POST'])
 @app.route('/api/inspiration/<path:gender>', methods=['GET', 'POST'])
 def api_inspirations(gender):
-    print(f"api_inspirations:{request.json=}\n{gender=}")
     inspirations, gender = core.get_inspirations(gender=gender)
-    print(f"{inspirations=}\n{gender=}")
     return jsonify({'inspirations' : inspirations})
 
 # ============================= #
@@ -134,14 +132,14 @@ def web_query(query):
     # Frontend slugifies the urls by converting spaces to ' '. 
     query = query.replace('-', ' ')
     db_logging.log_search(query, request.referrer)
-    return render_template('query.html', products=core.get_search_results(query))
+    return render_template('query.html', products=core.get_search_results(query), query=query)
 
 @app.route('/api/query', methods=['GET', 'POST'])
 def api_query():
     try:
         query = request.json.get('query')
         db_logging.log_search(query, request.json.get('referrer'))
-        return jsonify({'products' : core.get_search_results(query)})
+        return jsonify({'products' : core.get_search_results(query), 'query': query})
     except Exception as e:
         return jsonify({'error' : e}), 500
 
@@ -278,7 +276,7 @@ def login_android():
         user = core.create_user_if_needed(id_info)
         print(f"login_android:{user=}")
         cookie_handler.set_cookie_updates_at_login(user=user)
-        return jsonify({"is_logged_in": True}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
+        return jsonify({"is_logged_in": True, "gender": user.gender}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
     except ValueError as ex:
         print(f"Token verification failed: {ex}")
         return jsonify({'is_logged_in': False}), 400

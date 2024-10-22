@@ -54,6 +54,7 @@ def get_product(product_id, user_id=None):
     
     product = products_df.iloc[product_id].to_dict()
     product['is_wishlisted'] = is_wishlisted_product(product_id=product_id, user_id=user_id)
+    print(f"get_product: {product['is_wishlisted']=}")
     return product
 
 def get_similar_products(product_id, n = 128):

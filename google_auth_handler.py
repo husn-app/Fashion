@@ -3,6 +3,7 @@ from config import Config
 ## Assert google auth configs.
 assert Config.GOOGLE_CLIENT_ID is not None
 assert Config.GOOGLE_CLIENT_SECRET
+assert Config.ANDROID_CLIENT_ID
 
 def get_google_oauth(oauth):
     return oauth.register(

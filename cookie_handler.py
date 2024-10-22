@@ -66,7 +66,6 @@ def set_cookie_updates_at_login(user):
         'auth_info' : auth_info,
         'picture_url' : user.picture_url,
         'email' : user.email,
-        'gender' : user.gender,
         'onboarding_stage' : user.onboarding_stage or 'PENDING'
     })
     
