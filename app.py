@@ -118,9 +118,11 @@ def web_inspirations(gender):
     return render_template('inspirations.html', inspirations=inspirations, gender=gender)
 
 @app.route('/api/inspiration', defaults={'gender': None})
-@app.route('/api/inspiration/<path:gender>')
+@app.route('/api/inspiration/<path:gender>', methods=['GET', 'POST'])
 def api_inspirations(gender):
+    print(f"api_inspirations:{request.json=}\n{gender=}")
     inspirations, gender = core.get_inspirations(gender=gender)
+    print(f"{inspirations=}\n{gender=}")
     return jsonify({'inspirations' : inspirations})
 
 # ============================= #
@@ -257,6 +259,7 @@ def onboarding():
     
 @app.route('/api/onboarding', methods = ['POST'])
 def api_onboarding():
+    print(f"api_onboarding:{request.json=}")
     if not g.user_id:
         return '', 501
     
@@ -267,6 +270,7 @@ def api_onboarding():
 
 @app.route('/login_android', methods = ['POST'])
 def login_android():
+    print(f"login_android: Cookies: {request.headers.get('Cookie')=}")
     idToken = request.json.get('idToken')
     print(f"login_android:{request.headers=}\n{idToken=}")
     try:
@@ -274,25 +278,6 @@ def login_android():
         user = core.create_user_if_needed(id_info)
         print(f"login_android:{user=}")
         cookie_handler.set_cookie_updates_at_login(user=user)
-        # email = id_info['email']
-        # user = User.query.filter_by(email=email).first()
-        # if not user:
-        #     user = User(
-        #         auth_id=id_info.get('sub'),
-        #         email=email,
-        #         name=id_info.get('name'),
-        #         given_name=id_info.get('given_name'),
-        #         family_name=id_info.get('family_name'),
-        #         picture_url=id_info.get('picture')
-        #     )
-        #     db.session.add(user)
-        #     db.session.commit()
-        #     print(f"Creating new android user: {user}")
-        # print(f"Existing android user: {user}")
-        # # login_user(user)
-        # onboarding_stage = g.onboarding_stage if g.onboarding_stage else "UNKNOWN"
-        # gender = g.gender if g.gender and onboarding_stage == "COMPLETE" else ""
-        # print(f"login_android:{g=}\n{gender=}\n{onboarding_stage}\n{g.picture_url=}")
         return jsonify({"is_logged_in": True}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
     except ValueError as ex:
         print(f"Token verification failed: {ex}")
