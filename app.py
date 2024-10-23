@@ -271,6 +271,7 @@ def login_android():
     try:
         id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), Config.ANDROID_CLIENT_ID)
         user = core.create_user_if_needed(id_info)
+        print(f"login_android:{user.name=}\n{user.email=}")
         cookie_handler.set_cookie_updates_at_login(user=user)
         return jsonify({"is_logged_in": True}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
     except ValueError as e:
