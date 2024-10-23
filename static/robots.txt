@@ -4,15 +4,25 @@ Disallow: /
 User-agent: DataForSeoBot
 Disallow: /
 
-User-agent: AhrefsBot  # Now disallowed
+User-agent: AhrefsBot
 Disallow: /
 
-User-agent: Amazonbot # Now disallowed
+User-agent: Amazonbot
 Disallow: /
 
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: dotbot
+Disallow: /
 
 User-agent: Googlebot
+Disallow: /api/
 Allow: /
 
 User-agent: bingbot
+Disallow: /api/
 Allow: /
+
+User-agent: *
+Disallow: /api/

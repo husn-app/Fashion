@@ -55,11 +55,22 @@ def filter_shuffle(seq):
 def inject_deployment_type():
     return dict(deployment_type=app.config['DEPLOYMENT_TYPE'])
 
+# ============================= #
+# Static Routes                 #
+# ============================= #
 @app.route('/robots.txt')
 def robots_txt():
     if Config.DEPLOYMENT_TYPE == 'PROD':
         return app.send_static_file('robots.txt')
     return app.send_static_file('robots-dev.txt')
+
+@app.route('/privacypolicy')
+def privacypolicy():
+    return render_template('privacypolicy.html')
+
+@app.route('/support')
+def support():
+    return render_template('support.html')
     
 
 
