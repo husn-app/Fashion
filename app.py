@@ -15,6 +15,8 @@ from models import User
 from flask_migrate import Migrate
 import random
 import google_auth_handler
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_api_requests
 
 app = Flask(__name__)
 app.config.from_object(Config) 
@@ -102,7 +104,7 @@ def web_feed():
     feed_products = core.get_feed(g.user_id)
     return render_template('feed.html', feed_products=feed_products)
 
-@app.route('/api/feed')
+@app.route('/api/feed', methods=['GET', 'POST'])
 def api_feed():
     return jsonify({'products' : core.get_feed(g.user_id)})
 
@@ -115,8 +117,8 @@ def web_inspirations(gender):
     inspirations, gender = core.get_inspirations(gender=gender)
     return render_template('inspirations.html', inspirations=inspirations, gender=gender)
 
-@app.route('/api/inspiration', defaults={'gender': None})
-@app.route('/api/inspiration/<path:gender>')
+@app.route('/api/inspiration', defaults={'gender': None}, methods = ['GET', 'POST'])
+@app.route('/api/inspiration/<path:gender>', methods=['GET', 'POST'])
 def api_inspirations(gender):
     inspirations, gender = core.get_inspirations(gender=gender)
     return jsonify({'inspirations' : inspirations})
@@ -130,14 +132,14 @@ def web_query(query):
     # Frontend slugifies the urls by converting spaces to ' '. 
     query = query.replace('-', ' ')
     db_logging.log_search(query, request.referrer)
-    return render_template('query.html', products=core.get_search_results(query))
+    return render_template('query.html', products=core.get_search_results(query), query=query)
 
-@app.route('/api/query')
+@app.route('/api/query', methods=['GET', 'POST'])
 def api_query():
     try:
         query = request.json.get('query')
         db_logging.log_search(query, request.json.get('referrer'))
-        return jsonify({'products' : core.process_query(query)})
+        return jsonify({'products' : core.get_search_results(query), 'query': query})
     except Exception as e:
         return jsonify({'error' : e}), 500
 
@@ -154,7 +156,7 @@ def web_product(slug, product_id):
     # TODO: Use is_wishlisted as part of the product itself. 
     return render_template('product.html', current_product=product, products=core.get_similar_products(product_id), is_wishlisted=product['is_wishlisted'])
 
-@app.route('/api/product/<int:product_id>')
+@app.route('/api/product/<int:product_id>', methods=['GET', 'POST'])
 def api_product(product_id):
     db_logging.log_product_click(product_id=product_id, referrer=request.json.get('referrer'))
     try:
@@ -177,14 +179,14 @@ def wishlist():
         abort(500)
     return render_template('wishlist.html', products=wishlisted_products)
 
-@app.route('/api/wishlist')
+@app.route('/api/wishlist', methods = ['GET', 'POST'])
 def api_wishlist():
     if not g.user_id:
         return '', 401
     wishlisted_products, err = core.get_wishlisted_products(g.user_id)
     if err:
         abort(500)
-    return jsonify({'wishlisted_products' : wishlisted_products})
+    return jsonify({'products' : wishlisted_products})
 
 # ============================= #
 # Toggle wishlist               #
@@ -254,6 +256,7 @@ def onboarding():
     
 @app.route('/api/onboarding', methods = ['POST'])
 def api_onboarding():
+    print(f"INFO: api_onboarding:{request.json=}")
     if not g.user_id:
         return '', 501
     
@@ -262,5 +265,17 @@ def api_onboarding():
             return '', 500
         return '', 200
 
+@app.route('/login_android', methods = ['POST'])
+def login_android():
+    idToken = request.json.get('idToken')
+    try:
+        id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), Config.ANDROID_CLIENT_ID)
+        user = core.create_user_if_needed(id_info)
+        cookie_handler.set_cookie_updates_at_login(user=user)
+        return jsonify({"is_logged_in": True}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
+    except ValueError as e:
+        print(f"ERROR: Token verification failed: {e}")
+        return jsonify({'is_logged_in': False}), 400
+    
 if __name__ == '__main__':
     app.run(debug=(Config.DEPLOYMENT_TYPE == 'LOCAL'))

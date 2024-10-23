@@ -22,6 +22,8 @@ class Config(object):
     # But the session reconnnection is more costly - probably 200ms-300ms, and can overload if multiple sessions are being refreshed around the same time.
     # But it has the advantage of being called lesser number of times. 
     POOL_PRE_PING = (os.environ.get('POOL_PRE_PING', 'True').lower() == 'true')
+    ANDROID_CLIENT_ID = os.environ.get('ANDROID_CLIENT_ID')
+        
     # By default sqlalchemy doesn't recycle connections which can lead to "stale" connections.
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_recycle': int(os.environ.get('POOL_RECYCLE', 15 * 60)),  # Recycle connections every 15 mins.
