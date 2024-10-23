@@ -66,9 +66,12 @@ def set_cookie_updates_at_login(user):
         'auth_info' : auth_info,
         'picture_url' : user.picture_url,
         'email' : user.email,
-        'gender' : user.gender,
         'onboarding_stage' : user.onboarding_stage or 'PENDING'
     })
+    if user.gender:
+        g.cookie_updates.update({
+            'gender': user.gender
+        })
     
 def update_cookies_at_onboarding(gender, onboarding_stage):
     g.cookie_updates.update({
