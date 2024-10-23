@@ -269,10 +269,10 @@ def api_onboarding():
 def login_android():
     idToken = request.json.get('idToken')
     try:
-        id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), app.config['ANDROID_CLIENT_ID'])
+        id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), Config.ANDROID_CLIENT_ID)
         user = core.create_user_if_needed(id_info)
         cookie_handler.set_cookie_updates_at_login(user=user)
-        return jsonify({"is_logged_in": True, "gender": user.gender}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
+        return jsonify({"is_logged_in": True}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
     except ValueError as e:
         print(f"ERROR: Token verification failed: {e}")
         return jsonify({'is_logged_in': False}), 400
