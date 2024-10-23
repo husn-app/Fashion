@@ -15,7 +15,6 @@ faiss_index = artifacts_loader.load_faiss_index(image_embeddings)
 similar_products_cache = artifacts_loader.load_similar_products_cache()
 inspirations_obj = artifacts_loader.load_inspirations()
 
-
 MAN, WOMAN = 'MAN', 'WOMAN'
 ONBOARDING_COMPLETE = 'COMPLETE'
 
@@ -79,9 +78,19 @@ def get_inspirations(gender):
 
     return inspirations_obj[gender], gender.lower()
 
+def get_default_feed(gender):
+    global products_df
+    feed_products_indexes = [product['index'] for insp in inspirations_obj[gender] for product in insp['products']]
+    sampled_feed_indexes = random.sample(feed_products_indexes,
+                                         min(Config.FEED_NUM_PRODUCTS, len(feed_products_indexes)))
+    return products_df.iloc[sampled_feed_indexes].to_dict('records')
 
 def get_feed(user_id):
     global products_df
+    
+    # TODO : Only on /api/feed. This is only for early testing for iOS. Remove.
+    if not user_id:
+        return get_default_feed(WOMAN)
     
     # Get clicked products.
     clicks = UserClick.query.with_entities(UserClick.product_index, UserClick.clicked_at) \
@@ -93,9 +102,9 @@ def get_feed(user_id):
         .all()
     clicked_products = [click.product_index for click in clicks]
     
-    # Don't return results if user hasn't made some clicks yet.
+    # Return feed from inspirations if user hasn't made some clicks yet.
     if len(clicked_products) < Config.FEED_MINIMUM_CLICKS:
-        return []
+        return get_default_feed(g.get('gender', WOMAN))
     
     # sample feed porducts. 
     feed_products_indexes = list(set(similar_products_cache[clicked_products].view(-1).detach().tolist()))
