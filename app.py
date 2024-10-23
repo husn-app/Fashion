@@ -141,7 +141,7 @@ def api_query():
         db_logging.log_search(query, request.json.get('referrer'))
         return jsonify({'products' : core.get_search_results(query), 'query': query})
     except Exception as e:
-        return jsonify({'error' : e}), 500
+        return jsonify({'error' : str(e)}), 500
 
 # ============================= #
 # Product                       #
@@ -165,7 +165,7 @@ def api_product(product_id):
             'similar_products' : core.get_similar_products(product_id),
             })
     except Exception as e:
-        return jsonify({"error": e}), 400
+        return jsonify({"error": str(e)}), 400
 
 # ============================= #
 # Wishlist                      #
@@ -271,6 +271,7 @@ def login_android():
     try:
         id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), Config.ANDROID_CLIENT_ID)
         user = core.create_user_if_needed(id_info)
+        print(f"login_android:{user.name=}\n{user.email=}")
         cookie_handler.set_cookie_updates_at_login(user=user)
         return jsonify({"is_logged_in": True}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
     except ValueError as e:
