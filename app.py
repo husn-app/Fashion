@@ -1,5 +1,5 @@
 
-from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session, g, abort
+from flask import Flask, jsonify, render_template, redirect, request, url_for, make_response, session, g, abort, send_from_directory
 
 import torch
 torch.set_grad_enabled(False)
@@ -159,6 +159,9 @@ def api_product(product_id):
         print(f"ERROR: /product/{product_id} failed:", e)
         return jsonify({"error": 'ERROR'}), 400
 
+@app.route('/product')
+def product_base():
+    return "Welcome to Husn App Products!", 200
 # ============================= #
 # Wishlist                      #
 # ============================= #
@@ -285,6 +288,10 @@ def applogin():
     except ValueError as e:
         print(f"ERROR: Token verification failed: {e}")
         return jsonify({'is_logged_in': False}), 400
-    
+
+
+@app.route('/.well-known/<path:filename>')
+def well_known(filename):
+    return send_from_directory('.well-known', filename)
 if __name__ == '__main__':
     app.run(debug=(Config.DEPLOYMENT_TYPE == 'LOCAL'))

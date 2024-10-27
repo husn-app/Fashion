@@ -13,4 +13,4 @@ products_minimal.csv
 similar_products_cache.pt
 *rough.ipynb
 sqlite.db
-*.json
+inspirations*.json

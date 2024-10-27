@@ -1,0 +1,14 @@
+[
+    {
+      "relation": [
+        "delegate_permission/common.handle_all_urls"
+      ],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.husn.fashionapp",
+        "sha256_cert_fingerprints": [
+          "27:99:6C:41:37:B6:92:BB:AA:97:1F:AF:D8:BE:8C:EE:E1:34:1A:ED:7F:AA:87:9E:18:E0:F7:63:00:ED:AF:F2"
+        ]
+      }
+    }
+  ]
