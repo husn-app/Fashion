@@ -131,7 +131,8 @@ def api_query():
         db_logging.log_search(query, request.json.get('referrer'))
         return jsonify({'products' : core.get_search_results(query), 'query': query})
     except Exception as e:
-        return jsonify({'error' : str(e)}), 500
+        print(f"ERROR: /api/query/{query}: ", e)
+        return jsonify({'error' : 'ERROR'}), 500
 
 # ============================= #
 # Product                       #
@@ -155,7 +156,8 @@ def api_product(product_id):
             'similar_products' : core.get_similar_products(product_id),
             })
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        print(f"ERROR: /product/{product_id} failed:", e)
+        return jsonify({"error": 'ERROR'}), 400
 
 # ============================= #
 # Wishlist                      #
