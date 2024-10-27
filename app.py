@@ -159,6 +159,9 @@ def api_product(product_id):
         print(f"ERROR: /product/{product_id} failed:", e)
         return jsonify({"error": 'ERROR'}), 400
 
+@app.route('/product')
+def product_base():
+    return "Welcome to Husn App Products!", 200
 # ============================= #
 # Wishlist                      #
 # ============================= #
