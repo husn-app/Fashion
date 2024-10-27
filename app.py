@@ -290,8 +290,8 @@ def applogin():
         return jsonify({'is_logged_in': False}), 400
 
 
-@app.route('/.well-known/<path:filename>')
-def well_known(filename):
-    return send_from_directory('.well-known', filename)
+@app.route('/.well-known/assetlinks.json')
+def well_known():
+    return send_from_directory('static', 'assetlinks.json')
 if __name__ == '__main__':
     app.run(debug=(Config.DEPLOYMENT_TYPE == 'LOCAL'))
