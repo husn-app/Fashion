@@ -65,9 +65,17 @@ def get_similar_products(product_id, n = 128):
     topk_indices = similar_products_cache[product_id][:n]
     return products_df.iloc[topk_indices].to_dict('records')
 
+
 def get_inspirations(gender):
     """Returns inspirations for the given gender or empty if gender is invalid."""
     global inspirations_obj
+    
+    def shuffled_inspirations(inspirations):
+        for insp in inspirations:
+            random.shuffle(insp['products'])
+        random.shuffle(inspirations)
+        return inspirations
+    
     if (not gender) and g.gender:
         gender = g.gender
     gender = gender or WOMAN
@@ -76,7 +84,7 @@ def get_inspirations(gender):
     if gender not in (MAN, WOMAN):
         gender = WOMAN
 
-    return inspirations_obj[gender], gender.lower()
+    return shuffled_inspirations(inspirations_obj[gender]), gender.lower()
 
 def get_default_feed(gender):
     global products_df
@@ -104,7 +112,7 @@ def get_feed(user_id):
     
     # Return feed from inspirations if user hasn't made some clicks yet.
     if len(clicked_products) < Config.FEED_MINIMUM_CLICKS:
-        return get_default_feed(g.get('gender', WOMAN))
+        return get_default_feed(gender=(g.get('gender') or WOMAN)) # g.gender=None => g.get('gender', WOMAN) = None
     
     # sample feed porducts. 
     feed_products_indexes = list(set(similar_products_cache[clicked_products].view(-1).detach().tolist()))
@@ -151,7 +159,7 @@ def get_wishlisted_products(user_id):
     if not user_id:
         return [], "User not authenticated"
     try:
-        wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=user_id).all()
+        wishlisted_products = db.session.query(WishlistItem.product_index).filter_by(user_id=user_id).order_by(WishlistItem.created_at.desc()).all()
         wishlisted_valid_indices = [index[0] for index in wishlisted_products if index[0] < len(products_df)]
         return products_df.iloc[wishlisted_valid_indices].to_dict('records'), None
     except Exception as e:

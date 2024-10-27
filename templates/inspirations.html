@@ -25,12 +25,12 @@
 <hr>
 {% endif %}
 
-{% for inspiration in inspirations | shuffle%}
+{% for inspiration in inspirations %}
 <div class="my-3">
     <span class="font-serif text-2xl text-center block underline mb-2">{{ inspiration.category }}</span>
     <div class="relative w-full flex gap-6 snap-x snap-mandatory overflow-x-auto pb-14 ">
 
-        {% for product in inspiration.products | shuffle %}
+        {% for product in inspiration.products %}
         <div
             class="snap-center w-[280px] h-[372px] shrink-0 first:ml-0 last:mr-8 transition-transform duration-300 ease-in-out transform hover:scale-105">
             {% include 'product-inspiration-view.html' %}

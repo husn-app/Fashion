@@ -43,16 +43,6 @@ import core ## Loads all artifacts as well.
 oauth = OAuth(app)
 google_oauth = google_auth_handler.get_google_oauth(oauth)
 
-
-@app.template_filter('shuffle')
-def filter_shuffle(seq):
-    try:
-        result = list(seq)
-        random.shuffle(result)
-        return result
-    except:
-        return seq
-
 @app.context_processor
 def inject_deployment_type():
     return dict(deployment_type=app.config['DEPLOYMENT_TYPE'])
@@ -265,15 +255,31 @@ def api_onboarding():
             return '', 500
         return '', 200
 
-@app.route('/login_android', methods = ['POST'])
-def login_android():
+@app.route('/api/applogin', methods = ['POST'])
+def applogin():
     idToken = request.json.get('idToken')
     try:
-        id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request(), Config.ANDROID_CLIENT_ID)
+        id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request())
+        
+        
+        def get_device_type(aud):
+            if aud == Config.ANDROID_CLIENT_ID:
+                return 'ANDROID'
+            if aud == Config.IOS_CLIENT_ID:
+                return 'IOS'
+            return None
+
+        device_type = get_device_type(id_info['aud'])
+        if not device_type:
+            print('CRITICAL: Login attempt with Invalid client id: ', id_info['aud'])
+            raise ValueError('Invalid client id: ', id_info['aud'])
+    
         user = core.create_user_if_needed(id_info)
-        print(f"login_android:{user.name=}\n{user.email=}")
+        
+        print(f"INFO: {device_type} Login : {user.name=}\n{user.email=}")
+        
         cookie_handler.set_cookie_updates_at_login(user=user)
-        return jsonify({"is_logged_in": True}) #"picture_url": g.picture_url, "is_onboarded": user.onboarding_stage == "COMPLETE", "gender": gender})
+        return jsonify({"is_logged_in": True})
     except ValueError as e:
         print(f"ERROR: Token verification failed: {e}")
         return jsonify({'is_logged_in': False}), 400
