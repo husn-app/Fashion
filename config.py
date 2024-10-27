@@ -5,9 +5,15 @@ class Config(object):
     DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'LOCAL')
     DATA_ROOT_DIR = os.environ.get('DATA_ROOT_DIR', '/husn-cool-storage/20231014/') if (DEPLOYMENT_TYPE in ('PROD', 'DEV')) else './'
     SECRET_KEY = os.environ.get('HUSN_SECRET_KEY')
+    
+    # Google Sign-IN
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+    ANDROID_CLIENT_ID = os.environ.get('ANDROID_CLIENT_ID')
+    # This is the GIDServerClientID.Currently, same as GIDClientID set in IOS. 
+    IOS_CLIENT_ID = os.environ.get('IOS_CLIENT_ID')
     REFRESH_TOKEN_URL = "https://oauth2.googleapis.com/token"
+    
     SESSION_COOKIE_HTTPONLY = True 
     DATABASE_TYPE = os.environ.get('DATABASE_TYPE')
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'sqlite.db')
@@ -22,7 +28,6 @@ class Config(object):
     # But the session reconnnection is more costly - probably 200ms-300ms, and can overload if multiple sessions are being refreshed around the same time.
     # But it has the advantage of being called lesser number of times. 
     POOL_PRE_PING = (os.environ.get('POOL_PRE_PING', 'True').lower() == 'true')
-    ANDROID_CLIENT_ID = os.environ.get('ANDROID_CLIENT_ID')
         
     # By default sqlalchemy doesn't recycle connections which can lead to "stale" connections.
     SQLALCHEMY_ENGINE_OPTIONS = {

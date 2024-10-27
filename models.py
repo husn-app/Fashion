@@ -16,7 +16,7 @@ class User(db.Model, UserMixin):
     birth_year = db.Column(db.Integer, nullable=True)
     onboarding_stage = db.Column(db.Enum('PENDING', 'COMPLETE', name='onboarding_stage_enum'), nullable=True)
     wishlisted_products = db.relationship('WishlistItem', backref='user')
-    created_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    created_at = db.Column(db.DateTime, nullable=True, default=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
 
     def __repr__(self) -> str:
         return f"{self.id=}\n{self.email=}\n{self.name=}"
@@ -26,7 +26,7 @@ class WishlistItem(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     product_index = db.Column(db.Integer, index=True)
     referrer = db.Column(db.String, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    created_at = db.Column(db.DateTime, nullable=True, default=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
     
 class UserClick(db.Model):
     id = db.Column(db.Integer, primary_key=True) # Add a primary key
@@ -35,6 +35,6 @@ class UserClick(db.Model):
     product_index = db.Column(db.Integer, nullable=True)
     search_query = db.Column(db.String, nullable=True)
     referrer = db.Column(db.String, nullable=True)
-    clicked_at = db.Column(db.DateTime, nullable=True, default=datetime.now(pytz.timezone('Asia/Kolkata')))
+    clicked_at = db.Column(db.DateTime, nullable=True, default=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
     ip = db.Column(db.String(45), nullable=True)
     user_agent = db.Column(db.String(255), nullable=True)
