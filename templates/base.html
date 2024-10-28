@@ -131,12 +131,15 @@
 
 <body>
     {% include 'navbar-top.html' %}
-    <div class="container">
+    <div class="container" style="padding-bottom: 4rem;">
         <div>
             {% block content %}
             {% endblock %}
         </div>
-
+        <footer class="text-center py-3 d-flex justify-content-between" style="background-color: #dedacf;">
+            <a href="{{ url_for('support') }}" class="text-gray-600" style="text-decoration: underline;">Support</a>
+            <a href="{{ url_for('privacypolicy') }}" class="text-gray-600" style="text-decoration: underline;">Privacy Policy</a>
+        </footer>
         {% if not disable_bottom_navbar %}
         {% include 'navbar-bottom.html' %}
         {% endif %}
