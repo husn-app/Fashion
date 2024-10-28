@@ -78,6 +78,7 @@ def get_inspirations(gender):
     
     if (not gender) and g.gender:
         gender = g.gender
+    gender = gender or g.get('gender')
     gender = gender or WOMAN
     gender = gender.upper()
     

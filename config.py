@@ -57,3 +57,7 @@ class Config(object):
     PREFERRED_URL_SCHEME = 'https' if (DEPLOYMENT_TYPE != 'LOCAL') else 'http'
     
     LOGGING_DESTINATION = os.environ.get('LOGGING_DESTINATION', 'LOG')
+
+    # App URLs
+    PLAY_STORE_URL = os.environ.get('PLAY_STORE_URL')
+    APP_STORE_URL = os.environ.get('APP_STORE_URL')
