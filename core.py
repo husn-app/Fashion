@@ -76,8 +76,9 @@ def get_inspirations(gender):
         random.shuffle(inspirations)
         return inspirations
     
-    if (not gender) and g.gender:
-        gender = g.gender
+
+    # Try to get gender from cookies. 
+    gender = gender or g.get('gender')
     gender = gender or WOMAN
     gender = gender.upper()
     

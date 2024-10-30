@@ -225,7 +225,7 @@ def authorize():
         return redirect(next_url)
         
     cookie_handler.set_cookie_updates_at_login(user=user)
-    return redirect(next_url)
+    return redirect('/')
 
 # Route for logout
 @app.route('/logout')
@@ -293,5 +293,16 @@ def applogin():
 @app.route('/.well-known/assetlinks.json')
 def well_known():
     return send_from_directory('static', 'assetlinks.json')
+
+@app.route('/downloadapp')
+def download_app():
+    user_agent = request.headers.get('User-Agent').lower()
+    if 'android' in user_agent and Config.PLAY_STORE_URL:
+        return redirect(Config.PLAY_STORE_URL)
+    elif ('iphone' in user_agent or 'ipad' in user_agent) and Config.APP_STORE_URL:
+        return redirect(Config.APP_STORE_URL)
+    else:
+        return redirect('/')
+
 if __name__ == '__main__':
     app.run(debug=(Config.DEPLOYMENT_TYPE == 'LOCAL'))

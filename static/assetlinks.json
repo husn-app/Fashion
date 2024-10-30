@@ -7,7 +7,9 @@
         "namespace": "android_app",
         "package_name": "com.husn.fashionapp",
         "sha256_cert_fingerprints": [
-          "27:99:6C:41:37:B6:92:BB:AA:97:1F:AF:D8:BE:8C:EE:E1:34:1A:ED:7F:AA:87:9E:18:E0:F7:63:00:ED:AF:F2"
+          "27:99:6C:41:37:B6:92:BB:AA:97:1F:AF:D8:BE:8C:EE:E1:34:1A:ED:7F:AA:87:9E:18:E0:F7:63:00:ED:AF:F2",
+          "77:F2:FC:A6:D8:84:DB:65:18:F4:4A:81:C8:2F:9A:CE:3E:98:66:10:FB:71:60:EA:66:3E:F3:F6:EA:EA:44:A9",
+          "CF:3B:BF:74:6E:FF:F3:17:81:A5:60:27:55:0B:39:A2:A0:3E:25:BA:90:59:08:6F:3D:7B:E0:6C:E0:9F:D2:73"
         ]
       }
     }
