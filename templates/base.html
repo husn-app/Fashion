@@ -136,12 +136,15 @@
             {% block content %}
             {% endblock %}
         </div>
+
+      
         {% if KEEP_FOOTER %}
         <footer class="text-center py-3 d-flex justify-content-between" style="background-color: #dedacf;">
             <a href="{{ url_for('support') }}" class="text-gray-600" style="text-decoration: underline;">Support</a>
             <a href="{{ url_for('privacypolicy') }}" class="text-gray-600" style="text-decoration: underline;">Privacy Policy</a>
         </footer>
         {% endif %}
+
         {% if not disable_bottom_navbar %}
         {% include 'navbar-bottom.html' %}
         {% endif %}
