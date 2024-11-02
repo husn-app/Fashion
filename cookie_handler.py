@@ -6,7 +6,7 @@ from uuid import uuid4
 
 assert Config.SECRET_KEY is not None
 serializer = URLSafeTimedSerializer(Config.SECRET_KEY)
-
+    
 # We persist the session id across login / logouts.
 def set_cookie_updates_for_new_session():
     if not g.session_id:
@@ -27,14 +27,8 @@ def get_auth_info():
     auth_cookie = cookies.get('auth_info')
     
     # New user.
-    if auth_cookie is None:
-        g.session_id = str(uuid4())
-        auth_cookie = serializer.dumps({
-            'session_id' : g.session_id
-        })
-        g.cookie_updates = {
-            'auth_info' : auth_cookie
-        }
+    if not auth_cookie:
+        set_cookie_updates_for_new_session()
         return
     
     # Existing user.    
@@ -47,7 +41,8 @@ def get_auth_info():
         # This shouldn't happen since cookies age is 100 years
         print("CRITICAL [Unexpected]: Logging out user because of expired signature.")
     except BadSignature:
-        # Not handling this. If someone is tampering the cookies their user_id, session_id would be None. 
+        # Logout. If someone is tampering the cookies their user_id, session_id would be None. 
+        g.cookie_updates.clear()
         print("CRITICAL: Someone tampered cookies or the secret key is wrong!")
         
 # @app.after_request registered in app.py
@@ -64,8 +59,8 @@ def set_cookie_updates_at_login(user):
     })
     g.cookie_updates.update({
         'auth_info' : auth_info,
-        'picture_url' : user.picture_url,
-        'email' : user.email,
+        'picture_url' : user.picture_url or '',
+        'email' : user.email or '',
         'onboarding_stage' : user.onboarding_stage or 'PENDING'
     })
     if user.gender:

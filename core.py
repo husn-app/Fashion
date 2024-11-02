@@ -124,13 +124,27 @@ def get_feed(user_id):
 
 
 def create_user_if_needed(user_info):
+    print(f"{user_info=}")
+    assert user_info.get('email') or user_info.get('sub'), f"None of email/sub are populated {user_info=}"
+
+    # Don't use get, since both sub/email can be null. Email should ideally not be null, but can be in case of errors.
     try:
-        user = User.query.filter_by(email=user_info['email']).first()
+        if user_info.get('email'):
+            user = User.query.filter_by(email=user_info['email']).first()
+        elif user_info.get('sub'):
+            user = User.query.filter_by(sub=user_info['sub']).first()
+            
         if user:
             return user
-        user = User(auth_id=user_info.get('id'), email=user_info.get('email'), name=user_info.get('name'),
-                    given_name=user_info.get('given_name'), family_name=user_info.get('family_name'),
-                    picture_url=user_info.get('picture'))
+        user = User(auth_id=user_info.get('id'),
+                    email=user_info.get('email'),
+                    name=user_info.get('name', ''),
+                    given_name=user_info.get('given_name', ''),
+                    family_name=user_info.get('family_name', ''),
+                    picture_url=user_info.get('picture', ''),
+                    sub=user_info.get('sub'),
+                    is_private_email=user_info.get('is_private_email', False))
+
         db.session.add(user)
         print(f"INFO: Created {user=}")
         db.session.commit()
