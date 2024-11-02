@@ -136,7 +136,7 @@ def create_user_if_needed(user_info):
             
         if user:
             return user
-        user = User(auth_id=user_info.get('id', ''),
+        user = User(auth_id=user_info.get('id'),
                     email=user_info.get('email'),
                     name=user_info.get('name', ''),
                     given_name=user_info.get('given_name', ''),
