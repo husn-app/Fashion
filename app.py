@@ -17,6 +17,7 @@ import random
 import google_auth_handler
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_api_requests
+import apple_auth_handler
 
 app = Flask(__name__)
 app.config.from_object(Config) 
@@ -262,31 +263,44 @@ def api_onboarding():
 
 @app.route('/api/applogin', methods = ['POST'])
 def applogin():
-    idToken = request.json.get('idToken')
-    try:
-        id_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request())
-        
-        
+    data = request.json
+    idToken = data.get('idToken')
+    sign_in_type = data.get('sign_in_type', 'GOOGLE')
+    
+    print(f"{idToken=}\n{sign_in_type=}")
+    
+    if sign_in_type == 'GOOGLE':
+        user_info = id_token.verify_oauth2_token(idToken, google_api_requests.Request())
+    elif sign_in_type == 'APPLE':
+        user_info = apple_auth_handler.verify_apple_id_token(idToken)
+        user_info['given_name'], user_info['family_name'] = data.get('given_name', ''), data.get('family_name', '')
+        user_info['name'] = f"{user_info['given_name']} {user_info['family_name']}".strip()
+    else:
+        print("CRITICAL: Unexpecdted path")
+        return '', 401
+    
+    try: 
         def get_device_type(aud):
             if aud == Config.ANDROID_CLIENT_ID:
                 return 'ANDROID'
             if aud == Config.IOS_CLIENT_ID:
                 return 'IOS'
+            if aud == apple_auth_handler.IOS_BUNDLE_ID:
+                return 'IOS-AppleSignIn'
             return None
 
-        device_type = get_device_type(id_info['aud'])
+        device_type = get_device_type(user_info['aud'])
         if not device_type:
-            print('CRITICAL: Login attempt with Invalid client id: ', id_info['aud'])
-            raise ValueError('Invalid client id: ', id_info['aud'])
+            print('CRITICAL: Login attempt with Invalid client id: ', user_info['aud'])
     
-        user = core.create_user_if_needed(id_info)
+        user = core.create_user_if_needed(user_info)
         
-        print(f"INFO: {device_type} Login : {user.name=}\n{user.email=}")
+        print(f"INFO: {device_type} Login : {user.name=} | {user.email=} | {user.sub=}")
         
         cookie_handler.set_cookie_updates_at_login(user=user)
         return jsonify({"is_logged_in": True})
-    except ValueError as e:
-        print(f"ERROR: Token verification failed: {e}")
+    except Exception as e:
+        print(f"ERROR: Error in logging in: {e}")
         return jsonify({'is_logged_in': False}), 400
 
 
