@@ -64,8 +64,10 @@ def privacypolicy():
 @app.route('/support')
 def support():
     return render_template('support.html')
-    
 
+@app.route('/.well-known/assetlinks.json')
+def well_known():
+    return send_from_directory('static', 'assetlinks.json')
 
 @app.route('/login-screen')
 def login_screen():
@@ -254,7 +256,7 @@ def onboarding():
 def api_onboarding():
     print(f"INFO: api_onboarding:{request.json=}")
     if not g.user_id:
-        return '', 501
+        return '', 401
     
     if request.method == 'POST':
         if not core.complete_onboarding(age=request.json.get('age', 0), gender=request.json.get('gender', 0)):
@@ -303,10 +305,42 @@ def applogin():
         print(f"ERROR: Error in logging in: {e}")
         return jsonify({'is_logged_in': False}), 400
 
+# ============================= #
+# Profile & Account             #
+# ============================= # 
+@app.route('/api/profile', methods = ['POST'])
+def api_profile():
+    if not g.user_id:
+        return '', 401
+    try:
+        user = core.get_full_user()
+        assert user is not None, f"{user=}"
+        return jsonify({
+            'given_name' : user.given_name or '',
+            'family_name' : user.family_name or '',
+            'picture_url' : user.picture_url or '',
+            'email' : user.email or '',
+            'is_private_email' : user.is_private_email
+        })
+    except Exception as e:
+        print("ERROR: error retrieving full user: ", e)
+        return '', 500
 
-@app.route('/.well-known/assetlinks.json')
-def well_known():
-    return send_from_directory('static', 'assetlinks.json')
+@app.route('/api/delete_account', methods = ['POST'])
+def api_delete_account():
+    if not g.user_id:
+        return '', 401
+    
+    try:
+        user = core.get_full_user()
+        user.onboarding_stage = None
+        user.gender = None
+        user.birth_year = None
+        db.session.commit()
+    except Exception as e:
+        print("ERROR: Error deleting user: ", e)
+    print(f"USER {g.user_id=} requested to delete their account.")
+    return ''
 
 @app.route('/downloadapp')
 def download_app():

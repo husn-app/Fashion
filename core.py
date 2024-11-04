@@ -156,7 +156,7 @@ def create_user_if_needed(user_info):
 def get_full_user():
     if not g.user_id:
         return None
-    if g.current_user:
+    if g.get('current_user'):
         return g.current_user
 
     g.current_user = None
