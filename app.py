@@ -99,7 +99,14 @@ def web_feed():
 
 @app.route('/api/feed', methods=['GET', 'POST'])
 def api_feed():
-    return jsonify({'products' : core.get_feed(g.user_id)})
+    # Put in a try-catch block to handle when request doesn't have json.
+    try:
+        num_products = int(request.json.get('num_products', Config.FEED_NUM_PRODUCTS))
+    except Exception as e:
+        print("Error getting num_products in /api/feed: ", e)
+        num_products = Config.FEED_NUM_PRODUCTS
+    
+    return jsonify({'products' : core.get_feed(user_id=g.user_id, num_products=num_products)})
 
 # ============================= #
 # Inspirations                  #

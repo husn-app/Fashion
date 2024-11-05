@@ -87,19 +87,20 @@ def get_inspirations(gender):
 
     return shuffled_inspirations(inspirations_obj[gender]), gender.lower()
 
-def get_default_feed(gender):
+def get_default_feed(gender, num_products):
     global products_df
     feed_products_indexes = [product['index'] for insp in inspirations_obj[gender] for product in insp['products']]
     sampled_feed_indexes = random.sample(feed_products_indexes,
-                                         min(Config.FEED_NUM_PRODUCTS, len(feed_products_indexes)))
+                                         min(num_products, len(feed_products_indexes)))
     return products_df.iloc[sampled_feed_indexes].to_dict('records')
 
-def get_feed(user_id):
+def get_feed(user_id, num_products=None):
     global products_df
     
+    num_products = num_products or Config.FEED_NUM_PRODUCTS
     # TODO : Only on /api/feed. This is only for early testing for iOS. Remove.
     if not user_id:
-        return get_default_feed(WOMAN)
+        return get_default_feed(WOMAN, num_products=num_products)
     
     # Get clicked products.
     clicks = UserClick.query.with_entities(UserClick.product_index, UserClick.clicked_at) \
@@ -113,12 +114,12 @@ def get_feed(user_id):
     
     # Return feed from inspirations if user hasn't made some clicks yet.
     if len(clicked_products) < Config.FEED_MINIMUM_CLICKS:
-        return get_default_feed(gender=(g.get('gender') or WOMAN)) # g.gender=None => g.get('gender', WOMAN) = None
+        return get_default_feed(gender=(g.get('gender') or WOMAN), num_products=num_products) # g.gender=None => g.get('gender', WOMAN) = None
     
     # sample feed porducts. 
     feed_products_indexes = list(set(similar_products_cache[clicked_products].view(-1).detach().tolist()))
     sampled_feed_indexes = random.sample(feed_products_indexes,
-                                         min(Config.FEED_NUM_PRODUCTS, len(feed_products_indexes)))
+                                         min(num_products, len(feed_products_indexes)))
     
     return products_df.iloc[sampled_feed_indexes].to_dict('records')
 
