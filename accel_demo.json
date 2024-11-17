@@ -1,0 +1,41 @@
+[
+    {
+        "username": "sonali",
+        "name": "Sonali De Rycker",
+        "main photo": "https://husnstorage.z30.web.core.windows.net/sonali_main.jpg",
+        "generated_photos_url": [
+            "https://husnstorage.z30.web.core.windows.net/sonali_1.jpg",
+            "https://husnstorage.z30.web.core.windows.net/sonali_2.jpg"
+        ],
+        "similar_products_indices": []
+    },
+    {
+        "username": "andrew",
+        "name": "Andrew Braccia",
+        "main photo": "https://husnstorage.z30.web.core.windows.net/andrew_main.jpg",
+        "generated_photos_url": [
+            "https://husnstorage.z30.web.core.windows.net/andrew_1.jpg",
+            "https://husnstorage.z30.web.core.windows.net/andrew_2.jpg",
+            "https://husnstorage.z30.web.core.windows.net/andrew_3.jpg",
+            "https://husnstorage.z30.web.core.windows.net/andrew_4.jpg",
+            "https://husnstorage.z30.web.core.windows.net/andrew_5.jpg",
+            "https://husnstorage.z30.web.core.windows.net/andrew_6.jpg",
+            "https://husnstorage.z30.web.core.windows.net/andrew_7.jpg",
+            "https://husnstorage.z30.web.core.windows.net/andrew_8.jpg"
+        ],
+        "similar_products_indices": []
+    },
+    {
+        "username": "ping",
+        "name": "Ping Li",
+        "main photo": "https://husnstorage.z30.web.core.windows.net/ping_main.jpg",
+        "generated_photos_url": [
+            "https://husnstorage.z30.web.core.windows.net/ping_1.jpg",
+            "https://husnstorage.z30.web.core.windows.net/ping_2.jpg",
+            "https://husnstorage.z30.web.core.windows.net/ping_3.jpg",
+            "https://husnstorage.z30.web.core.windows.net/ping_4.jpg",
+            "https://husnstorage.z30.web.core.windows.net/ping_5.jpg"
+        ],
+        "similar_products_indices": []
+    }
+]
