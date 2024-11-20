@@ -1,0 +1,17 @@
+{% set title = 'Demo' %}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-2 mt-2 px-0"></div>
+    {% with query='' %}
+    {% include "search-bar.html"%}
+    {% endwith %}
+</div>
+
+{% for person in people %}
+    {% with main_photo_url=person['main_photo'], generated_photos=person['generated_photos'] %}
+    {% include 'demo-single-person.html' %}
+    {% endwith %}
+{% endfor %}
+
+{% endblock %}

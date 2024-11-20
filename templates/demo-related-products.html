@@ -1,0 +1,21 @@
+{% set title = 'Demo Products' %}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-2 mt-2 px-0"></div>
+    {% with query='' %}
+    {% include "search-bar.html"%}
+    {% endwith %}
+</div>
+
+<div class="card h-100" style="border: 0 !important; background-color:transparent;">
+    <img src="{{ generated_image_url }}" alt="Generated Photo" style="border-radius:15px;" class="img-fluid">
+</div>
+
+<div class = "mt-2"></div>
+<hr>
+<div class = "mt-3">
+{% include 'products-list.html' %}
+</div>
+
+{% endblock %}

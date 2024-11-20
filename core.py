@@ -224,3 +224,6 @@ def complete_onboarding(age, gender):
     # Update cookies. 
     cookie_handler.update_cookies_at_onboarding(gender=gender, onboarding_stage=ONBOARDING_COMPLETE)
     return True
+
+def get_products_from_df(product_indices):
+    return products_df.iloc[product_indices].to_dict('records')
