@@ -1,0 +1,20 @@
+<div class="card h-100" style="border: 0 !important; background-color:transparent;">
+<img src="{{ main_photo_url }}" alt="Main Photo" style="border-radius:15px;" class="img-fluid">
+</div>
+
+<div class = "mt-2"></div>
+<hr>
+<div class = "mt-1">
+    <div class="card-body px-1 pt-1 pb-0 text-center" style="background-color:transparent !important;">
+        <span class="mt-1 mb-1 text-lg font-medium text-gray-800">Shop these looks:</span>
+    </div>
+    <div class="row row-cols-2 row-cols-md-5 gx-0 gx-md-3">
+        {% for i in range(generated_photos|length) %}
+        <div class="col mb-4 px-2">
+            {% with generated_photo_key=generated_photos[i] %}
+            {% include 'demo-generated-photo.html' %}
+            {% endwith %}
+        </div>
+        {% endfor %}
+    </div>
+</div>

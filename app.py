@@ -18,6 +18,7 @@ import google_auth_handler
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_api_requests
 import apple_auth_handler
+import json
 
 app = Flask(__name__)
 app.config.from_object(Config) 
@@ -359,5 +360,23 @@ def download_app():
     else:
         return redirect('/')
 
+@app.route('/demo/<string:demo_name>')
+def demo(demo_name):
+    DEMO_JSON_PATH = f"{Config.DEMO_BASE_PATH}/{demo_name}_demo.json"
+    with open(DEMO_JSON_PATH, 'r') as file:
+        demo_data = json.load(file)
+    return render_template("demo.html", people=demo_data[1:], demo_name=demo_name, cdn_base_url=Config.CDN_BASE_URL)
+
+@app.route('/demo/<string:demo_name>/<string:generated_photo_key>')
+def demo_related_products(demo_name, generated_photo_key):
+    DEMO_JSON_PATH = f"{Config.DEMO_BASE_PATH}/{demo_name}_demo.json"
+    with open(DEMO_JSON_PATH, 'r') as file:
+        demo_data = json.load(file)
+    demo_data = demo_data[0]
+    if generated_photo_key not in demo_data:
+        return redirect(request.referrer)
+    demo_data = demo_data[generated_photo_key]
+    return render_template("demo-related-products.html", generated_image_url=demo_data["generated_image_url"], products=core.get_products_from_df(demo_data["similar_products_indices"]))
+    
 if __name__ == '__main__':
     app.run(debug=(Config.DEPLOYMENT_TYPE == 'LOCAL'))

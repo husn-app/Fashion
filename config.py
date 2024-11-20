@@ -61,3 +61,7 @@ class Config(object):
     # App URLs
     PLAY_STORE_URL = os.environ.get('PLAY_STORE_URL')
     APP_STORE_URL = os.environ.get('APP_STORE_URL')
+
+    # Demo base path
+    DEMO_BASE_PATH = os.environ.get('DEMO_BASE_PATH', '.')
+    CDN_BASE_URL = os.environ.get('CDN_BASE_URL', 'https://husnstorage.z30.web.core.windows.net/')
